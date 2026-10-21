@@ -1,0 +1,126 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SINDACO | Escuela de Manejo</title>
+  <link rel="stylesheet" href="estilo.css" />
+</head>
+<body>
+  <div id="loginView" class="login-screen">
+    <div class="login-panel">
+      <div class="brand-panel">
+        <div class="brand-badge">S</div>
+        <h1>SINDACO</h1>
+        <p>Sistema Integral de Gestión</p>
+        <p class="brand-subtitle">Escuela de Manejo</p>
+
+        <ul class="brand-list">
+          <li>✓ Matrículas</li>
+          <li>✓ Clases y horarios</li>
+          <li>✓ Pagos y paquetes</li>
+          <li>✓ Instructores y vehículos</li>
+          <li>✓ Asistencia y evaluaciones</li>
+        </ul>
+      </div>
+
+      <div class="form-panel">
+        <div class="header-form">
+          <h2>Iniciar sesión</h2>
+          <p>Acceso al sistema SINDACO</p>
+        </div>
+
+        <form id="loginForm">
+          <label for="email">Correo electrónico</label>
+          <div class="input-wrap">
+            <span>@</span>
+            <input id="email" type="email" placeholder="ejemplo@correo.com" required />
+          </div>
+
+          <label for="password">Contraseña</label>
+          <div class="input-wrap">
+            <span>🔒</span>
+            <input id="password" type="password" placeholder="••••••••" required />
+          </div>
+
+          <label for="rol">Rol</label>
+          <select id="rol">
+            <option value="">Seleccione un rol</option>
+            <option value="propietario">Propietario</option>
+            <option value="administrador">Administrador</option>
+            <option value="instructor">Instructor</option>
+            <option value="alumno">Alumno</option>
+          </select>
+
+          <div class="form-options">
+            <label class="remember">
+              <input type="checkbox" />
+              Recordarme
+            </label>
+            <a href="#">Recuperar contraseña</a>
+          </div>
+
+          <div id="loginMessage" class="login-message"></div>
+
+          <button type="submit" class="primary-btn">
+            Iniciar sesión
+          </button>
+        </form>
+
+        <div class="demo-box">
+          <h4>Credenciales de prueba</h4>
+          <p>propietario@sindaco.com / pass123</p>
+          <p>admin@sindaco.com / pass123</p>
+          <p>instructor@sindaco.com / pass123</p>
+          <p>alumno@sindaco.com / pass123</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mini">S</div>
+        <div>
+          <h3>SINDACO</h3>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-section="dashboard">Dashboard</button>
+        <button class="nav-item" data-section="alumnos">Alumnos</button>
+        <button class="nav-item" data-section="matriculas">Matrículas</button>
+        <button class="nav-item" data-section="clases">Clases</button>
+        <button class="nav-item" data-section="pagos">Pagos</button>
+        <button class="nav-item" data-section="vehiculos">Vehículos</button>
+        <button class="nav-item" data-section="instructores">Instructores</button>
+        <button class="nav-item" data-section="asistencia">Asistencia</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logoutBtn" class="secondary-btn">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Panel principal</p>
+          <h2 id="pageTitle">Dashboard</h2>
+        </div>
+        <div class="user-pill">
+          <span class="status-dot"></span>
+          <span id="userBadge">Propietario</span>
+        </div>
+      </header>
+
+      <div id="viewContent"></div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
