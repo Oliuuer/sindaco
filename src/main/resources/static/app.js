@@ -4,8 +4,10 @@ const defaultState = {
   users: [
     { id: 1, nombre: "Juan Pérez", email: "propietario@sindaco.com", password: "pass123", rol: "propietario" },
     { id: 2, nombre: "María García", email: "admin@sindaco.com", password: "pass123", rol: "administrador" },
-    { id: 3, nombre: "Carlos López", email: "instructor@sindaco.com", password: "pass123", rol: "instructor" },
-    { id: 4, nombre: "Pedro Martínez", email: "alumno@sindaco.com", password: "pass123", rol: "alumno" }
+    { id: 3, nombre: "Ana Ramos", email: "recepcionista@sindaco.com", password: "pass123", rol: "recepcionista" },
+    { id: 4, nombre: "Luis Vega", email: "encargado@sindaco.com", password: "pass123", rol: "encargado_flotas" },
+    { id: 5, nombre: "Carlos López", email: "instructor@sindaco.com", password: "pass123", rol: "instructor" },
+    { id: 6, nombre: "Pedro Martínez", email: "alumno@sindaco.com", password: "pass123", rol: "alumno" }
   ],
   paquetes: [
     { id: 1, nombre: "A-I", categoria: "A-I", numero_clases: 10, precio: 450.00, vigente: true },
@@ -44,6 +46,14 @@ const defaultState = {
   asistencias: [
     { id: 1, claseId: 1, asistio: true, calificacion: 17, observaciones: "Muy buen desempeño" },
     { id: 2, claseId: 2, asistio: false, calificacion: 0, observaciones: "Falta justificada" }
+  ],
+  mantenimientos: [
+    { id: 1, vehiculoId: 2, tipo: "Preventivo", descripcion: "Cambio de aceite y revisión general", fecha: "2026-09-16", estado: "en_proceso", proveedor: "Taller AutoMax" },
+    { id: 2, vehiculoId: 1, tipo: "Correctivo", descripcion: "Ajuste de frenos", fecha: "2026-09-18", estado: "completado", proveedor: "Mecánica Central" }
+  ],
+  ausencias: [
+    { id: 1, alumnoId: 2, claseId: 2, motivo: "Emergencia familiar", fecha: "2026-09-20", estado: "pendiente_reprogramacion" },
+    { id: 2, alumnoId: 1, claseId: 1, motivo: "No pudo asistir", fecha: "2026-09-21", estado: "reprogramada" }
   ]
 };
 
@@ -114,14 +124,19 @@ function renderHeader() {
     dashboard: "Dashboard",
     alumnos: "Alumnos",
     matriculas: "Matrículas",
-    clases: "Clases",
     pagos: "Pagos",
+    paquetes: "Paquetes",
+    clases: "Clases",
     vehiculos: "Vehículos",
     instructores: "Instructores",
-    asistencia: "Asistencia"
+    asistencia: "Asistencia",
+    mantenimiento: "Mantenimiento",
+    ausencias: "Ausencias",
+    reportes: "Reportes",
+    historial: "Historial"
   };
 
-  title.textContent = map[state.currentSection];
+  title.textContent = map[state.currentSection] || "Dashboard";
 }
 
 function getAlumnoById(id) {
@@ -144,11 +159,22 @@ function getMatriculaById(id) {
   return appState.matriculas.find(m => m.id === Number(id));
 }
 
+function getClaseById(id) {
+  return appState.clases.find(c => c.id === Number(id));
+}
+
+function formatMoney(value) {
+  return `S/ ${Number(value || 0).toFixed(2)}`;
+}
+
 function renderDashboard() {
   const totalAlumnos = appState.alumnos.length;
   const totalClases = appState.clases.length;
   const totalPagos = appState.pagos.length;
   const totalInstructores = appState.instructores.length;
+  const totalPaquetes = appState.paquetes.length;
+  const totalMantenimientos = appState.mantenimientos.length;
+  const totalIngresos = appState.pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
 
   const html = `
     <section class="stats-grid">
@@ -171,9 +197,21 @@ function renderDashboard() {
       </article>
 
       <article class="stat-card">
-        <small>Instructores</small>
-        <h3>${totalInstructores}</h3>
+        <small>Ingresos</small>
+        <h3>${formatMoney(totalIngresos)}</h3>
+        <span>Totales</span>
+      </article>
+
+      <article class="stat-card">
+        <small>Paquetes</small>
+        <h3>${totalPaquetes}</h3>
         <span>Activos</span>
+      </article>
+
+      <article class="stat-card">
+        <small>Mantenimiento</small>
+        <h3>${totalMantenimientos}</h3>
+        <span>Registros</span>
       </article>
     </section>
 
@@ -218,7 +256,7 @@ function renderDashboard() {
           ${appState.pagos.length ? appState.pagos.map(p => {
             const matricula = getMatriculaById(p.matriculaId);
             const alumno = matricula ? getAlumnoById(matricula.alumnoId) : null;
-            return `<li><strong>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Alumno"}</strong><span>S/ ${Number(p.monto).toFixed(2)}</span></li>`;
+            return `<li><strong>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Alumno"}</strong><span>${formatMoney(p.monto)}</span></li>`;
           }).join("") : `<li><span>No hay pagos.</span></li>`}
         </ul>
       </div>
@@ -254,30 +292,14 @@ function renderDashboard() {
         <h3>Requerimientos funcionales del sistema</h3>
       </div>
       <div class="requirements-grid">
-        <div class="requirement-item">
-          <span>RF-01</span>
-          <p>Control de acceso por roles.</p>
-        </div>
-        <div class="requirement-item">
-          <span>RF-02</span>
-          <p>Registro de alumnos y paquetes.</p>
-        </div>
-        <div class="requirement-item">
-          <span>RF-03</span>
-          <p>Gestión de matrículas y pagos.</p>
-        </div>
-        <div class="requirement-item">
-          <span>RF-06</span>
-          <p>Control de asistencia y evaluaciones.</p>
-        </div>
-        <div class="requirement-item">
-          <span>RF-08</span>
-          <p>Control de horarios entre instructores.</p>
-        </div>
-        <div class="requirement-item">
-          <span>RF-09</span>
-          <p>Control de horarios entre vehículos.</p>
-        </div>
+        <div class="requirement-item"><span>RF-01</span><p>Control de acceso por roles.</p></div>
+        <div class="requirement-item"><span>RF-02</span><p>Registro de alumnos y paquetes.</p></div>
+        <div class="requirement-item"><span>RF-03</span><p>Gestión de matrículas y pagos.</p></div>
+        <div class="requirement-item"><span>RF-04</span><p>Programación de clases y asignación de recursos.</p></div>
+        <div class="requirement-item"><span>RF-05</span><p>Control de asistencia y evaluación.</p></div>
+        <div class="requirement-item"><span>RF-06</span><p>Gestión de mantenimiento y ausencias.</p></div>
+        <div class="requirement-item"><span>RF-07</span><p>Reportes e historial financiero.</p></div>
+        <div class="requirement-item"><span>RF-08</span><p>Promociones y paquetes comerciales.</p></div>
       </div>
     </section>
   `;
@@ -292,55 +314,23 @@ function renderAlumnos() {
         <h3>Registrar alumno</h3>
         <form id="alumnoForm">
           <div class="form-grid">
-            <div class="form-group">
-              <label>Nombre</label>
-              <input name="nombre" required />
-            </div>
-            <div class="form-group">
-              <label>Apellidos</label>
-              <input name="apellidos" required />
-            </div>
-            <div class="form-group">
-              <label>DNI</label>
-              <input name="dni" required />
-            </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input name="email" type="email" />
-            </div>
-            <div class="form-group">
-              <label>Teléfono</label>
-              <input name="telefono" />
-            </div>
-            <div class="form-group">
-              <label>Fecha registro</label>
-              <input name="fecha_registro" type="date" value="${new Date().toISOString().split('T')[0]}" />
-            </div>
-            <div class="form-group" style="grid-column: span 3;">
-              <label>Dirección</label>
-              <textarea name="direccion" rows="2"></textarea>
-            </div>
+            <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
+            <div class="form-group"><label>Apellidos</label><input name="apellidos" required /></div>
+            <div class="form-group"><label>DNI</label><input name="dni" required /></div>
+            <div class="form-group"><label>Email</label><input name="email" type="email" /></div>
+            <div class="form-group"><label>Teléfono</label><input name="telefono" /></div>
+            <div class="form-group"><label>Fecha registro</label><input name="fecha_registro" type="date" value="${new Date().toISOString().split("T")[0]}" /></div>
+            <div class="form-group" style="grid-column: span 3;"><label>Dirección</label><textarea name="direccion" rows="2"></textarea></div>
           </div>
-          <div class="form-actions">
-            <button type="submit" class="action-btn">Guardar alumno</button>
-          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar alumno</button></div>
         </form>
       </div>
 
       <div class="data-table-card">
-        <div class="table-header">
-          <h3>Listado de alumnos</h3>
-        </div>
-
+        <div class="table-header"><h3>Listado de alumnos</h3></div>
         <table>
           <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>DNI</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Acciones</th>
-            </tr>
+            <tr><th>Nombre</th><th>DNI</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             ${appState.alumnos.length ? appState.alumnos.map(a => `
@@ -382,13 +372,10 @@ function renderMatriculas() {
               <label>Paquete</label>
               <select name="paqueteId" required>
                 <option value="">Seleccione</option>
-                ${appState.paquetes.map(p => `<option value="${p.id}">${p.nombre} - S/ ${p.precio.toFixed(2)}</option>`).join("")}
+                ${appState.paquetes.map(p => `<option value="${p.id}">${p.nombre} - ${formatMoney(p.precio)}</option>`).join("")}
               </select>
             </div>
-            <div class="form-group">
-              <label>Fecha</label>
-              <input name="fecha" type="date" value="${new Date().toISOString().split('T')[0]}" required />
-            </div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
             <div class="form-group">
               <label>Estado</label>
               <select name="estado">
@@ -398,25 +385,15 @@ function renderMatriculas() {
               </select>
             </div>
           </div>
-          <div class="form-actions">
-            <button type="submit" class="action-btn">Guardar matrícula</button>
-          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar matrícula</button></div>
         </form>
       </div>
 
       <div class="data-table-card">
-        <div class="table-header">
-          <h3>Listado de matrículas</h3>
-        </div>
+        <div class="table-header"><h3>Listado de matrículas</h3></div>
         <table>
           <thead>
-            <tr>
-              <th>Alumno</th>
-              <th>Paquete</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
+            <tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             ${appState.matriculas.length ? appState.matriculas.map(m => {
@@ -428,106 +405,10 @@ function renderMatriculas() {
                   <td>${paquete ? paquete.nombre : "Sin paquete"}</td>
                   <td><span class="status ${m.estado}">${m.estado}</span></td>
                   <td>${m.fecha}</td>
-                  <td>
-                    <button class="delete-btn" data-action="delete-matricula" data-id="${m.id}">Eliminar</button>
-                  </td>
+                  <td><button class="delete-btn" data-action="delete-matricula" data-id="${m.id}">Eliminar</button></td>
                 </tr>
               `;
             }).join("") : `<tr><td colspan="5"><div class="empty-state">No hay matrículas.</div></td></tr>`}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
-}
-
-function renderClases() {
-  const html = `
-    <div class="section-shell">
-      <div class="form-card">
-        <h3>Programar clase</h3>
-        <form id="claseForm">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>Nombre</label>
-              <input name="nombre" required />
-            </div>
-            <div class="form-group">
-              <label>Fecha</label>
-              <input name="fecha" type="date" required />
-            </div>
-            <div class="form-group">
-              <label>Hora inicio</label>
-              <input name="horaInicio" type="time" required />
-            </div>
-            <div class="form-group">
-              <label>Hora fin</label>
-              <input name="horaFin" type="time" required />
-            </div>
-            <div class="form-group">
-              <label>Instructor</label>
-              <select name="instructorId" required>
-                <option value="">Seleccione</option>
-                ${appState.instructores.map(i => `<option value="${i.id}">${i.nombre}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Vehículo</label>
-              <select name="vehiculoId" required>
-                <option value="">Seleccione</option>
-                ${appState.vehiculos.map(v => `<option value="${v.id}">${v.marca} ${v.modelo} - ${v.placa}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group" style="grid-column: span 3;">
-              <label>Estado</label>
-              <select name="estado">
-                <option value="programada">Programada</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="realizada">Realizada</option>
-                <option value="cancelada">Cancelada</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="action-btn">Guardar clase</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="data-table-card">
-        <div class="table-header">
-          <h3>Listado de clases</h3>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Clase</th>
-              <th>Fecha</th>
-              <th>Horario</th>
-              <th>Instructor</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${appState.clases.length ? appState.clases.map(c => {
-              const instructor = getInstructorById(c.instructorId);
-              return `
-                <tr>
-                  <td>${c.nombre}</td>
-                  <td>${c.fecha}</td>
-                  <td>${c.horaInicio} - ${c.horaFin}</td>
-                  <td>${instructor ? instructor.nombre : "Sin instructor"}</td>
-                  <td><span class="status ${c.estado}">${c.estado}</span></td>
-                  <td>
-                    <button class="delete-btn" data-action="delete-clase" data-id="${c.id}">Eliminar</button>
-                  </td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay clases programadas.</div></td></tr>`}
           </tbody>
         </table>
       </div>
@@ -555,12 +436,7 @@ function renderPagos() {
                 }).join("")}
               </select>
             </div>
-
-            <div class="form-group">
-              <label>Monto</label>
-              <input name="monto" type="number" min="1" step="0.01" required />
-            </div>
-
+            <div class="form-group"><label>Monto</label><input name="monto" type="number" min="1" step="0.01" required /></div>
             <div class="form-group">
               <label>Método de pago</label>
               <select name="metodo" required>
@@ -570,38 +446,18 @@ function renderPagos() {
                 <option value="transferencia">Transferencia</option>
               </select>
             </div>
-
-            <div class="form-group">
-              <label>Número comprobante</label>
-              <input name="comprobante" required />
-            </div>
-
-            <div class="form-group" style="grid-column: span 2;">
-              <label>Fecha</label>
-              <input name="fecha" type="date" value="${new Date().toISOString().split('T')[0]}" required />
-            </div>
+            <div class="form-group"><label>Número comprobante</label><input name="comprobante" required /></div>
+            <div class="form-group" style="grid-column: span 2;"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
           </div>
-
-          <div class="form-actions">
-            <button type="submit" class="action-btn">Guardar pago</button>
-          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar pago</button></div>
         </form>
       </div>
 
       <div class="data-table-card">
-        <div class="table-header">
-          <h3>Listado de pagos</h3>
-        </div>
-
+        <div class="table-header"><h3>Listado de pagos</h3></div>
         <table>
           <thead>
-            <tr>
-              <th>Alumno</th>
-              <th>Monto</th>
-              <th>Método</th>
-              <th>Fecha</th>
-              <th>Acciones</th>
-            </tr>
+            <tr><th>Alumno</th><th>Monto</th><th>Método</th><th>Fecha</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             ${appState.pagos.length ? appState.pagos.map(p => {
@@ -610,15 +466,127 @@ function renderPagos() {
               return `
                 <tr>
                   <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
-                  <td>S/ ${Number(p.monto).toFixed(2)}</td>
+                  <td>${formatMoney(p.monto)}</td>
                   <td>${p.metodo}</td>
                   <td>${p.fecha}</td>
-                  <td>
-                    <button class="delete-btn" data-action="delete-pago" data-id="${p.id}">Eliminar</button>
-                  </td>
+                  <td><button class="delete-btn" data-action="delete-pago" data-id="${p.id}">Eliminar</button></td>
                 </tr>
               `;
             }).join("") : `<tr><td colspan="5"><div class="empty-state">No hay pagos.</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("viewContent").innerHTML = html;
+}
+
+function renderPaquetes() {
+  const html = `
+    <div class="section-shell">
+      <div class="form-card">
+        <h3>Gestionar paquete</h3>
+        <form id="paqueteForm">
+          <div class="form-grid two">
+            <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
+            <div class="form-group"><label>Categoría</label><input name="categoria" required /></div>
+            <div class="form-group"><label>Número de clases</label><input name="numero_clases" type="number" min="1" required /></div>
+            <div class="form-group"><label>Precio</label><input name="precio" type="number" min="0" step="0.01" required /></div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Vigente</label>
+              <select name="vigente">
+                <option value="true">Sí</option>
+                <option value="false">No</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar paquete</button></div>
+        </form>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Listado de paquetes</h3></div>
+        <table>
+          <thead>
+            <tr><th>Nombre</th><th>Categoría</th><th>Clases</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody>
+            ${appState.paquetes.length ? appState.paquetes.map(p => `
+              <tr>
+                <td>${p.nombre}</td>
+                <td>${p.categoria}</td>
+                <td>${p.numero_clases}</td>
+                <td>${formatMoney(p.precio)}</td>
+                <td>${p.vigente ? "Vigente" : "No vigente"}</td>
+                <td><button class="delete-btn" data-action="delete-paquete" data-id="${p.id}">Eliminar</button></td>
+              </tr>
+            `).join("") : `<tr><td colspan="6"><div class="empty-state">No hay paquetes.</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("viewContent").innerHTML = html;
+}
+
+function renderClases() {
+  const html = `
+    <div class="section-shell">
+      <div class="form-card">
+        <h3>Programar clase</h3>
+        <form id="claseForm">
+          <div class="form-grid">
+            <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" required /></div>
+            <div class="form-group"><label>Hora inicio</label><input name="horaInicio" type="time" required /></div>
+            <div class="form-group"><label>Hora fin</label><input name="horaFin" type="time" required /></div>
+            <div class="form-group"><label>Instructor</label>
+              <select name="instructorId" required>
+                <option value="">Seleccione</option>
+                ${appState.instructores.map(i => `<option value="${i.id}">${i.nombre}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group"><label>Vehículo</label>
+              <select name="vehiculoId" required>
+                <option value="">Seleccione</option>
+                ${appState.vehiculos.map(v => `<option value="${v.id}">${v.marca} ${v.modelo} - ${v.placa}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 3;"><label>Estado</label>
+              <select name="estado">
+                <option value="programada">Programada</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="realizada">Realizada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar clase</button></div>
+        </form>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Listado de clases</h3></div>
+        <table>
+          <thead>
+            <tr><th>Clase</th><th>Fecha</th><th>Horario</th><th>Instructor</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody>
+            ${appState.clases.length ? appState.clases.map(c => {
+              const instructor = getInstructorById(c.instructorId);
+              return `
+                <tr>
+                  <td>${c.nombre}</td>
+                  <td>${c.fecha}</td>
+                  <td>${c.horaInicio} - ${c.horaFin}</td>
+                  <td>${instructor ? instructor.nombre : "Sin instructor"}</td>
+                  <td><span class="status ${c.estado}">${c.estado}</span></td>
+                  <td><button class="delete-btn" data-action="delete-clase" data-id="${c.id}">Eliminar</button></td>
+                </tr>
+              `;
+            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay clases programadas.</div></td></tr>`}
           </tbody>
         </table>
       </div>
@@ -635,18 +603,9 @@ function renderVehiculos() {
         <h3>Registrar vehículo</h3>
         <form id="vehiculoForm">
           <div class="form-grid two">
-            <div class="form-group">
-              <label>Placa</label>
-              <input name="placa" required />
-            </div>
-            <div class="form-group">
-              <label>Marca</label>
-              <input name="marca" required />
-            </div>
-            <div class="form-group">
-              <label>Modelo</label>
-              <input name="modelo" required />
-            </div>
+            <div class="form-group"><label>Placa</label><input name="placa" required /></div>
+            <div class="form-group"><label>Marca</label><input name="marca" required /></div>
+            <div class="form-group"><label>Modelo</label><input name="modelo" required /></div>
             <div class="form-group">
               <label>Estado</label>
               <select name="estado">
@@ -656,26 +615,15 @@ function renderVehiculos() {
               </select>
             </div>
           </div>
-          <div class="form-actions">
-            <button type="submit" class="action-btn">Guardar vehículo</button>
-          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar vehículo</button></div>
         </form>
       </div>
 
       <div class="data-table-card">
-        <div class="table-header">
-          <h3>Inventario de vehículos</h3>
-        </div>
-
+        <div class="table-header"><h3>Inventario de vehículos</h3></div>
         <table>
           <thead>
-            <tr>
-              <th>Placa</th>
-              <th>Marca</th>
-              <th>Modelo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
+            <tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>Estado</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             ${appState.vehiculos.length ? appState.vehiculos.map(v => `
@@ -684,9 +632,7 @@ function renderVehiculos() {
                 <td>${v.marca}</td>
                 <td>${v.modelo}</td>
                 <td>${v.estado}</td>
-                <td>
-                  <button class="delete-btn" data-action="delete-vehiculo" data-id="${v.id}">Eliminar</button>
-                </td>
+                <td><button class="delete-btn" data-action="delete-vehiculo" data-id="${v.id}">Eliminar</button></td>
               </tr>
             `).join("") : `<tr><td colspan="5"><div class="empty-state">No hay vehículos.</div></td></tr>`}
           </tbody>
@@ -705,18 +651,9 @@ function renderInstructores() {
         <h3>Registrar instructor</h3>
         <form id="instructorForm">
           <div class="form-grid two">
-            <div class="form-group">
-              <label>Nombre</label>
-              <input name="nombre" required />
-            </div>
-            <div class="form-group">
-              <label>Especialidad</label>
-              <input name="especialidad" required />
-            </div>
-            <div class="form-group">
-              <label>Teléfono</label>
-              <input name="telefono" />
-            </div>
+            <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
+            <div class="form-group"><label>Especialidad</label><input name="especialidad" required /></div>
+            <div class="form-group"><label>Teléfono</label><input name="telefono" /></div>
             <div class="form-group">
               <label>Disponible</label>
               <select name="disponible">
@@ -725,26 +662,15 @@ function renderInstructores() {
               </select>
             </div>
           </div>
-          <div class="form-actions">
-            <button type="submit" class="action-btn">Guardar instructor</button>
-          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar instructor</button></div>
         </form>
       </div>
 
       <div class="data-table-card">
-        <div class="table-header">
-          <h3>Listado de instructores</h3>
-        </div>
-
+        <div class="table-header"><h3>Listado de instructores</h3></div>
         <table>
           <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Especialidad</th>
-              <th>Teléfono</th>
-              <th>Disponibilidad</th>
-              <th>Acciones</th>
-            </tr>
+            <tr><th>Nombre</th><th>Especialidad</th><th>Teléfono</th><th>Disponibilidad</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             ${appState.instructores.length ? appState.instructores.map(i => `
@@ -753,9 +679,7 @@ function renderInstructores() {
                 <td>${i.especialidad}</td>
                 <td>${i.telefono}</td>
                 <td>${i.disponible ? "Disponible" : "No disponible"}</td>
-                <td>
-                  <button class="delete-btn" data-action="delete-instructor" data-id="${i.id}">Eliminar</button>
-                </td>
+                <td><button class="delete-btn" data-action="delete-instructor" data-id="${i.id}">Eliminar</button></td>
               </tr>
             `).join("") : `<tr><td colspan="5"><div class="empty-state">No hay instructores.</div></td></tr>`}
           </tbody>
@@ -771,19 +695,10 @@ function renderAsistencia() {
   const html = `
     <div class="section-shell">
       <div class="data-table-card">
-        <div class="table-header">
-          <h3>Registro de asistencia</h3>
-        </div>
-
+        <div class="table-header"><h3>Registro de asistencia</h3></div>
         <table>
           <thead>
-            <tr>
-              <th>Clase</th>
-              <th>Fecha</th>
-              <th>Instructor</th>
-              <th>Asistió</th>
-              <th>Calificación</th>
-            </tr>
+            <tr><th>Clase</th><th>Fecha</th><th>Instructor</th><th>Asistió</th><th>Calificación</th></tr>
           </thead>
           <tbody>
             ${appState.clases.length ? appState.clases.map(c => {
@@ -808,6 +723,297 @@ function renderAsistencia() {
   document.getElementById("viewContent").innerHTML = html;
 }
 
+function renderMantenimiento() {
+  const html = `
+    <div class="section-shell">
+      <div class="form-card">
+        <h3>Registrar mantenimiento</h3>
+        <form id="mantenimientoForm">
+          <div class="form-grid two">
+            <div class="form-group">
+              <label>Vehículo</label>
+              <select name="vehiculoId" required>
+                <option value="">Seleccione</option>
+                ${appState.vehiculos.map(v => `<option value="${v.id}">${v.marca} ${v.modelo} - ${v.placa}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select name="tipo">
+                <option value="Preventivo">Preventivo</option>
+                <option value="Correctivo">Correctivo</option>
+                <option value="Inspección">Inspección</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Descripción</label>
+              <textarea name="descripcion" rows="2" required></textarea>
+            </div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
+            <div class="form-group">
+              <label>Estado</label>
+              <select name="estado">
+                <option value="en_proceso">En proceso</option>
+                <option value="completado">Completado</option>
+                <option value="pendiente">Pendiente</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;"><label>Proveedor</label><input name="proveedor" required /></div>
+          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar mantenimiento</button></div>
+        </form>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Historial de mantenimiento</h3></div>
+        <table>
+          <thead>
+            <tr><th>Vehículo</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th>Proveedor</th><th>Acciones</th></tr>
+          </thead>
+          <tbody>
+            ${appState.mantenimientos.length ? appState.mantenimientos.map(m => {
+              const vehiculo = getVehiculoById(m.vehiculoId);
+              return `
+                <tr>
+                  <td>${vehiculo ? `${vehiculo.marca} ${vehiculo.modelo}` : "Sin vehículo"}</td>
+                  <td>${m.tipo}</td>
+                  <td>${m.fecha}</td>
+                  <td>${m.estado}</td>
+                  <td>${m.proveedor}</td>
+                  <td><button class="delete-btn" data-action="delete-mantenimiento" data-id="${m.id}">Eliminar</button></td>
+                </tr>
+              `;
+            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay mantenimientos.</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("viewContent").innerHTML = html;
+}
+
+function renderAusencias() {
+  const html = `
+    <div class="section-shell">
+      <div class="form-card">
+        <h3>Registrar ausencia / reprogramación</h3>
+        <form id="ausenciaForm">
+          <div class="form-grid two">
+            <div class="form-group">
+              <label>Alumno</label>
+              <select name="alumnoId" required>
+                <option value="">Seleccione</option>
+                ${appState.alumnos.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Clase</label>
+              <select name="claseId" required>
+                <option value="">Seleccione</option>
+                ${appState.clases.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Motivo</label>
+              <textarea name="motivo" rows="2" required></textarea>
+            </div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
+            <div class="form-group">
+              <label>Estado</label>
+              <select name="estado">
+                <option value="pendiente_reprogramacion">Pendiente reprogramación</option>
+                <option value="reprogramada">Reprogramada</option>
+                <option value="justificada">Justificada</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar ausencia</button></div>
+        </form>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Control de ausencias y reprogramaciones</h3></div>
+        <table>
+          <thead>
+            <tr><th>Alumno</th><th>Clase</th><th>Fecha</th><th>Motivo</th><th>Estado</th><th>Acciones</th></tr>
+          </thead>
+          <tbody>
+            ${appState.ausencias.length ? appState.ausencias.map(a => {
+              const alumno = getAlumnoById(a.alumnoId);
+              const clase = getClaseById(a.claseId);
+              return `
+                <tr>
+                  <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
+                  <td>${clase ? clase.nombre : "Sin clase"}</td>
+                  <td>${a.fecha}</td>
+                  <td>${a.motivo}</td>
+                  <td>${a.estado}</td>
+                  <td><button class="delete-btn" data-action="delete-ausencia" data-id="${a.id}">Eliminar</button></td>
+                </tr>
+              `;
+            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay ausencias registradas.</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("viewContent").innerHTML = html;
+}
+
+function renderReportes() {
+  const totalIngresos = appState.pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
+  const totalMatriculas = appState.matriculas.length;
+  const totalClases = appState.clases.length;
+  const totalAlumnos = appState.alumnos.length;
+
+  const rows = appState.matriculas.map(m => {
+    const alumno = getAlumnoById(m.alumnoId);
+    const paquete = getPaqueteById(m.paqueteId);
+    const pago = appState.pagos.find(p => p.matriculaId === m.id);
+    return `
+      <tr>
+        <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
+        <td>${paquete ? paquete.nombre : "Sin paquete"}</td>
+        <td>${m.estado}</td>
+        <td>${pago ? formatMoney(pago.monto) : "S/ 0.00"}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const html = `
+    <div class="section-shell">
+      <section class="stats-grid">
+        <article class="stat-card blue">
+          <small>Ingresos totales</small>
+          <h3>${formatMoney(totalIngresos)}</h3>
+          <span>Periodo actual</span>
+        </article>
+        <article class="stat-card">
+          <small>Matrículas</small>
+          <h3>${totalMatriculas}</h3>
+          <span>Registradas</span>
+        </article>
+        <article class="stat-card">
+          <small>Clases</small>
+          <h3>${totalClases}</h3>
+          <span>Programadas</span>
+        </article>
+        <article class="stat-card">
+          <small>Alumnos</small>
+          <h3>${totalAlumnos}</h3>
+          <span>Activos</span>
+        </article>
+      </section>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Reporte de ingresos por matrícula</h3></div>
+        <table>
+          <thead>
+            <tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Pago</th></tr>
+          </thead>
+          <tbody>
+            ${rows || `<tr><td colspan="4">No hay reportes.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("viewContent").innerHTML = html;
+}
+
+function renderHistorial() {
+  const alumnos = appState.alumnos;
+  const selectOptions = alumnos.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join("");
+  const defaultAlumnoId = alumnos[0] ? alumnos[0].id : "";
+
+  const alumnoSeleccionado = getAlumnoById(defaultAlumnoId);
+  let academicRows = "";
+  let financialRows = "";
+
+  if (alumnoSeleccionado) {
+    const matriculas = appState.matriculas.filter(m => m.alumnoId === alumnoSeleccionado.id);
+    academicRows = matriculas.length ? matriculas.map(m => {
+      const paquete = getPaqueteById(m.paqueteId);
+      const clase = appState.clases.find(c => c.estado === "confirmada");
+      return `<tr><td>${m.fecha}</td><td>${paquete ? paquete.nombre : "-"}</td><td>${m.estado}</td><td>${clase ? clase.nombre : "Sin clase"}</td></tr>`;
+    }).join("") : `<tr><td colspan="4">No hay información académica.</td></tr>`;
+
+    financialRows = matriculas.length ? matriculas.map(m => {
+      const pago = appState.pagos.find(p => p.matriculaId === m.id);
+      return `<tr><td>${m.fecha}</td><td>${m.estado}</td><td>${pago ? formatMoney(pago.monto) : "S/ 0.00"}</td></tr>`;
+    }).join("") : `<tr><td colspan="3">No hay información financiera.</td></tr>`;
+  }
+
+  const html = `
+    <div class="section-shell">
+      <div class="form-card">
+        <h3>Consultar historial</h3>
+        <div class="form-grid two">
+          <div class="form-group" style="grid-column: span 2;">
+            <label>Alumno</label>
+            <select id="historialAlumnoSelect">
+              <option value="">Seleccione</option>
+              ${selectOptions}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Historial académico</h3></div>
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Paquete</th><th>Estado</th><th>Clase</th></tr>
+          </thead>
+          <tbody>${academicRows}</tbody>
+        </table>
+      </div>
+
+      <div class="data-table-card">
+        <div class="table-header"><h3>Historial financiero</h3></div>
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Estado</th><th>Monto</th></tr>
+          </thead>
+          <tbody>${financialRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("viewContent").innerHTML = html;
+
+  const select = document.getElementById("historialAlumnoSelect");
+  if (select) {
+    select.value = defaultAlumnoId || "";
+    select.addEventListener("change", function () {
+      const alumnoId = Number(select.value);
+      const alumno = getAlumnoById(alumnoId);
+      if (!alumno) return;
+
+      const matriculas = appState.matriculas.filter(m => m.alumnoId === alumno.id);
+      const academicRows2 = matriculas.length ? matriculas.map(m => {
+        const paquete = getPaqueteById(m.paqueteId);
+        return `<tr><td>${m.fecha}</td><td>${paquete ? paquete.nombre : "-"}</td><td>${m.estado}</td><td>${appState.clases.find(c => c.estado === "confirmada") ? appState.clases.find(c => c.estado === "confirmada").nombre : "Sin clase"}</td></tr>`;
+      }).join("") : `<tr><td colspan="4">No hay información académica.</td></tr>`;
+
+      const financialRows2 = matriculas.length ? matriculas.map(m => {
+        const pago = appState.pagos.find(p => p.matriculaId === m.id);
+        return `<tr><td>${m.fecha}</td><td>${m.estado}</td><td>${pago ? formatMoney(pago.monto) : "S/ 0.00"}</td></tr>`;
+      }).join("") : `<tr><td colspan="3">No hay información financiera.</td></tr>`;
+
+      const tables = document.querySelectorAll("table tbody");
+      if (tables.length >= 2) {
+        tables[0].innerHTML = academicRows2;
+        tables[1].innerHTML = financialRows2;
+      }
+    });
+  }
+}
+
 function renderSection() {
   renderHeader();
 
@@ -826,11 +1032,14 @@ function renderSection() {
     case "matriculas":
       renderMatriculas();
       break;
-    case "clases":
-      renderClases();
-      break;
     case "pagos":
       renderPagos();
+      break;
+    case "paquetes":
+      renderPaquetes();
+      break;
+    case "clases":
+      renderClases();
       break;
     case "vehiculos":
       renderVehiculos();
@@ -840,6 +1049,18 @@ function renderSection() {
       break;
     case "asistencia":
       renderAsistencia();
+      break;
+    case "mantenimiento":
+      renderMantenimiento();
+      break;
+    case "ausencias":
+      renderAusencias();
+      break;
+    case "reportes":
+      renderReportes();
+      break;
+    case "historial":
+      renderHistorial();
       break;
     default:
       renderDashboard();
@@ -929,6 +1150,45 @@ document.addEventListener("submit", function (e) {
     renderMatriculas();
   }
 
+  if (e.target && e.target.id === "pagoForm") {
+    e.preventDefault();
+
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    const nuevoPago = {
+      id: Date.now(),
+      matriculaId: Number(data.matriculaId),
+      monto: Number(data.monto),
+      metodo: data.metodo,
+      comprobante: data.comprobante.trim(),
+      fecha: data.fecha
+    };
+
+    appState.pagos.push(nuevoPago);
+    saveState();
+    renderPagos();
+  }
+
+  if (e.target && e.target.id === "paqueteForm") {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    const nuevoPaquete = {
+      id: Date.now(),
+      nombre: data.nombre.trim(),
+      categoria: data.categoria.trim(),
+      numero_clases: Number(data.numero_clases),
+      precio: Number(data.precio),
+      vigente: data.vigente === "true"
+    };
+
+    appState.paquetes.push(nuevoPaquete);
+    saveState();
+    renderPaquetes();
+  }
+
   if (e.target && e.target.id === "claseForm") {
     e.preventDefault();
 
@@ -949,26 +1209,6 @@ document.addEventListener("submit", function (e) {
     appState.clases.push(nuevaClase);
     saveState();
     renderClases();
-  }
-
-  if (e.target && e.target.id === "pagoForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoPago = {
-      id: Date.now(),
-      matriculaId: Number(data.matriculaId),
-      monto: Number(data.monto),
-      metodo: data.metodo,
-      comprobante: data.comprobante.trim(),
-      fecha: data.fecha
-    };
-
-    appState.pagos.push(nuevoPago);
-    saveState();
-    renderPagos();
   }
 
   if (e.target && e.target.id === "vehiculoForm") {
@@ -1008,6 +1248,45 @@ document.addEventListener("submit", function (e) {
     saveState();
     renderInstructores();
   }
+
+  if (e.target && e.target.id === "mantenimientoForm") {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    const nuevoMantenimiento = {
+      id: Date.now(),
+      vehiculoId: Number(data.vehiculoId),
+      tipo: data.tipo,
+      descripcion: data.descripcion.trim(),
+      fecha: data.fecha,
+      estado: data.estado,
+      proveedor: data.proveedor.trim()
+    };
+
+    appState.mantenimientos.push(nuevoMantenimiento);
+    saveState();
+    renderMantenimiento();
+  }
+
+  if (e.target && e.target.id === "ausenciaForm") {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    const nuevaAusencia = {
+      id: Date.now(),
+      alumnoId: Number(data.alumnoId),
+      claseId: Number(data.claseId),
+      motivo: data.motivo.trim(),
+      fecha: data.fecha,
+      estado: data.estado
+    };
+
+    appState.ausencias.push(nuevaAusencia);
+    saveState();
+    renderAusencias();
+  }
 });
 
 document.addEventListener("click", function (e) {
@@ -1029,19 +1308,26 @@ document.addEventListener("click", function (e) {
     renderMatriculas();
   }
 
+  if (target.dataset.action === "delete-pago") {
+    const id = Number(target.dataset.id);
+    appState.pagos = appState.pagos.filter(p => p.id !== id);
+    saveState();
+    renderPagos();
+  }
+
+  if (target.dataset.action === "delete-paquete") {
+    const id = Number(target.dataset.id);
+    appState.paquetes = appState.paquetes.filter(p => p.id !== id);
+    saveState();
+    renderPaquetes();
+  }
+
   if (target.dataset.action === "delete-clase") {
     const id = Number(target.dataset.id);
     appState.clases = appState.clases.filter(c => c.id !== id);
     appState.asistencias = appState.asistencias.filter(a => a.claseId !== id);
     saveState();
     renderClases();
-  }
-
-  if (target.dataset.action === "delete-pago") {
-    const id = Number(target.dataset.id);
-    appState.pagos = appState.pagos.filter(p => p.id !== id);
-    saveState();
-    renderPagos();
   }
 
   if (target.dataset.action === "delete-vehiculo") {
@@ -1056,6 +1342,20 @@ document.addEventListener("click", function (e) {
     appState.instructores = appState.instructores.filter(i => i.id !== id);
     saveState();
     renderInstructores();
+  }
+
+  if (target.dataset.action === "delete-mantenimiento") {
+    const id = Number(target.dataset.id);
+    appState.mantenimientos = appState.mantenimientos.filter(m => m.id !== id);
+    saveState();
+    renderMantenimiento();
+  }
+
+  if (target.dataset.action === "delete-ausencia") {
+    const id = Number(target.dataset.id);
+    appState.ausencias = appState.ausencias.filter(a => a.id !== id);
+    saveState();
+    renderAusencias();
   }
 
   if (target.dataset.action === "edit-alumno") {
