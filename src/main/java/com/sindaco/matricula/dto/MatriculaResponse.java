@@ -1,6 +1,6 @@
 package com.sindaco.matricula.dto;
 
-import com.sindaco.matricula.enum.EstadoMatricula;
+import com.sindaco.matricula.enums.EstadoMatricula;
 import java.time.LocalDate;
 
 public class MatriculaResponse {

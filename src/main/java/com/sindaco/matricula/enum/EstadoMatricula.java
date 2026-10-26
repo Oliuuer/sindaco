@@ -1,8 +1,1 @@
-package com.sindaco.matricula.enum;
-
-public enum EstadoMatricula {
-    CONFIRMADA,
-    POR_PAGAR,
-    CANCELADA,
-    VENCIDA
-}
+// Archivo obsoleto: el enum fue movido a com.sindaco.matricula.enums

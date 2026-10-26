@@ -3,7 +3,7 @@ package com.sindaco.matricula.service;
 import com.sindaco.matricula.dto.MatriculaRequest;
 import com.sindaco.matricula.dto.MatriculaResponse;
 import com.sindaco.matricula.entity.Matricula;
-import com.sindaco.matricula.enum.EstadoMatricula;
+import com.sindaco.matricula.enums.EstadoMatricula;
 import com.sindaco.matricula.repository.MatriculaRepository;
 import org.springframework.stereotype.Service;
 

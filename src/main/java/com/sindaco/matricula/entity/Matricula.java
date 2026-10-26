@@ -1,6 +1,6 @@
 package com.sindaco.matricula.entity;
 
-import com.sindaco.matricula.enum.EstadoMatricula;
+import com.sindaco.matricula.enums.EstadoMatricula;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
