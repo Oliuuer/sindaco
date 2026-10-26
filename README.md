@@ -155,6 +155,4 @@ El frontend es una aplicación de una página con datos simulados en `localStora
 - [ ] Conectar el frontend al backend
 - [ ] Pruebas y manual de usuario
 
-## 10. Equipo y curso
 
-Curso: Análisis y Diseño de Sistemas de Información – UTP · Docente: Fernando Díaz Sánchez · Lima, 2026.
