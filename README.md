@@ -23,6 +23,17 @@ Proyecto Sistema web para gestionar matrículas, pagos, clases, instructores, ve
 - Maven 3.9+ (o el Maven integrado de IntelliJ IDEA / Eclipse)
 - PostgreSQL 14 o superior
 
+### 2.2.3. Componentes clave
+
+El sistema está integrado por los siguientes componentes principales:
+
+I. Frontend: desarrollado con HTML5, CSS3 y JavaScript, encargado de la interfaz de usuario y adaptado a dispositivos móviles y de escritorio.
+II. Backend: desarrollado con Java 21 y Spring Boot 4, encargado de procesar la lógica de negocio (validación de matrículas, control de disponibilidad, cálculo de ingresos) a través de una API REST.
+III. Base de datos: gestionada con PostgreSQL, utilizada para almacenar de forma estructurada la información de alumnos, instructores, vehículos, matrículas y pagos.
+IV. Módulo de autenticación: gestiona los roles de propietario, administrador e instructor, con permisos diferenciados según el perfil de usuario y una futura integración con JWT y Spring Security.
+V. Módulo de reportes: consolida la información de pagos y clases realizadas para generar los reportes de ingresos que consulta el propietario.
+VI. Servidor de hosting: hospedaje en la nube para garantizar la disponibilidad continua del sistema durante el horario de atención de la escuela.
+
 ### 2.2.5. Entorno del sistema
 
 El sistema funciona en el siguiente entorno:
@@ -34,7 +45,7 @@ I. Usuarios
 
 II. Recursos
 • Técnicos: el sistema se aloja en un servidor en la nube y se accede mediante navegadores web modernos desde cualquier dispositivo con conexión a internet.
-• Software: para el backend se utiliza Node.js con Express, la base de datos se gestiona con PostgreSQL y el modelado del sistema se elabora en Visual Paradigm.
+• Software: para el backend se utiliza Java 21 con Spring Boot 4, la base de datos se gestiona con PostgreSQL y el modelado del sistema se elabora en Visual Paradigm.
 • Humanos: el equipo de desarrollo está conformado por los integrantes del grupo, y los usuarios finales son el propietario y el personal administrativo de SINDACO.
 
 ## 3. Cómo ejecutar
@@ -157,4 +168,3 @@ El frontend es una aplicación de una página con datos simulados en `localStora
 - Un caso de uso = un método de servicio con nombre claro (por ejemplo `registrarMatricula`).
 - Para agregar un caso de uso, copiar el patrón del ejemplo `Paquete` (módulo `matricula`).
 - Mensajes de error en español, siempre con `ApiError`.
-
