@@ -1,6 +1,6 @@
 # SINDACO – Sistema web de gestión de la Escuela de Manejo
 
-Proyecto del curso **Análisis y Diseño de Sistemas de Información (UTP)**. Sistema web para gestionar matrículas, pagos, clases, instructores, vehículos, asistencia y mantenimiento de una escuela de manejo.
+Proyecto Sistema web para gestionar matrículas, pagos, clases, instructores, vehículos, asistencia y mantenimiento de una escuela de manejo.
 
 > Estado actual: **arquitectura base lista**. El frontend ya existe (con datos de prueba) y el backend tiene la estructura por módulos, la configuración y **un ejemplo completo** (Paquetes, CU08) que sirve de molde para los demás casos de uso.
 
@@ -144,15 +144,5 @@ El frontend es una aplicación de una página con datos simulados en `localStora
 - Para agregar un caso de uso, copiar el patrón del ejemplo `Paquete` (módulo `matricula`).
 - Mensajes de error en español, siempre con `ApiError`.
 
-## 9. Hoja de ruta
-
-- [x] Estructura del proyecto y configuración base
-- [x] Ejemplo completo de un caso de uso (Paquetes)
-- [ ] Base de datos: alinear tablas con el modelo lógico (3.5) y físico (3.6) del informe; pasar de `ddl-auto=update` a `validate` con scripts de migración
-- [ ] Entidades JPA y repositorios de todo el modelo
-- [ ] Seguridad: login con JWT y permisos por rol
-- [ ] Servicios y controladores de CU01 a CU10
-- [ ] Conectar el frontend al backend
-- [ ] Pruebas y manual de usuario
 
 
