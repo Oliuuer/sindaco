@@ -2,7 +2,7 @@
 
 Proyecto Sistema web para gestionar matrículas, pagos, clases, instructores, vehículos, asistencia y mantenimiento de una escuela de manejo.
 
-> Estado actual: **arquitectura base lista**. El frontend ya existe (con datos de prueba) y el backend tiene la estructura por módulos, la configuración y **un ejemplo completo** (Paquetes, CU08) que sirve de molde para los demás casos de uso.
+> Estado actual: **arquitectura base lista**. El frontend ya existe (con datos de prueba) y el backend tiene la estructura por módulos, la configuración y **un ejemplo completo** (Paquetes, CU08) que sirve como referencia para implementar el resto de casos de uso.
 
 ## 1. Tecnologías
 
@@ -22,6 +22,20 @@ Proyecto Sistema web para gestionar matrículas, pagos, clases, instructores, ve
 - JDK 21
 - Maven 3.9+ (o el Maven integrado de IntelliJ IDEA / Eclipse)
 - PostgreSQL 14 o superior
+
+### 2.2.5. Entorno del sistema
+
+El sistema funciona en el siguiente entorno:
+
+I. Usuarios
+• Propietario: consulta los reportes de ingresos y supervisa las operaciones generales de la escuela.
+• Administrador: registra matrículas, pagos, asigna instructores y vehículos, y gestiona la agenda de clases.
+• Instructor: consulta su disponibilidad y las clases asignadas, y registra la asistencia de los alumnos.
+
+II. Recursos
+• Técnicos: el sistema se aloja en un servidor en la nube y se accede mediante navegadores web modernos desde cualquier dispositivo con conexión a internet.
+• Software: para el backend se utiliza Node.js con Express, la base de datos se gestiona con PostgreSQL y el modelado del sistema se elabora en Visual Paradigm.
+• Humanos: el equipo de desarrollo está conformado por los integrantes del grupo, y los usuarios finales son el propietario y el personal administrativo de SINDACO.
 
 ## 3. Cómo ejecutar
 
@@ -133,7 +147,7 @@ El frontend es una aplicación de una página con datos simulados en `localStora
 - Los roles **Recepcionista** y **Encargado de Flota** (solo existen Propietario, Administrador, Instructor y Alumno).
 - Las notificaciones (include de CU01 y CU02).
 
-**Para conectarlo al backend:** reemplazar las funciones que leen y guardan en `localStorage` (`loadState`, `saveState`, `loginUser`) por llamadas `fetch` a `/api/...`. Ojo: el frontend usa nombres con guion bajo (`numero_clases`) y la API devuelve camelCase (`numeroClases`); hay que unificarlos en un solo lado.
+**Para conectarlo al backend:** reemplazar las funciones que leen y guardan en `localStorage` (`loadState`, `saveState`, `loginUser`) por llamadas `fetch` a `/api/...`. Ojo: el frontend usa nombres como `Alumnos`, `Matrículas`, etc., y se debe mantener la compatibilidad con los DTO del backend.
 
 ## 8. Convenciones
 
@@ -143,6 +157,4 @@ El frontend es una aplicación de una página con datos simulados en `localStora
 - Un caso de uso = un método de servicio con nombre claro (por ejemplo `registrarMatricula`).
 - Para agregar un caso de uso, copiar el patrón del ejemplo `Paquete` (módulo `matricula`).
 - Mensajes de error en español, siempre con `ApiError`.
-
-
 
