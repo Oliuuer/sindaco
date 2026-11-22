@@ -27,6 +27,8 @@ Sistema integral para gestionar **matrículas, pagos, comprobantes, promociones,
 
 ## 3. Cómo ejecutar
 
+> ¿Descargaste el ZIP en lugar de clonar? Sigue la [guía paso a paso para desplegar desde ZIP](GUIA_DESPLIEGUE.md).
+
 1. Crear la base de datos (si no existe):
    ```sql
    CREATE DATABASE sindaco;
