@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sindaco.agenda.enums.EstadoVehiculo;
 import com.sindaco.agenda.service.VehiculoService;
 import com.sindaco.comun.exception.RecursoNoEncontradoException;
 import com.sindaco.comun.exception.ReglaNegocioException;
@@ -50,7 +51,9 @@ public class MantenimientoServiceImpl implements MantenimientoService {
 
         Mantenimiento mantenimiento = new Mantenimiento();
         aplicar(mantenimiento, request, LocalDate.now());
-        return aRespuesta(repository.save(mantenimiento));
+        MantenimientoResponse respuesta = aRespuesta(repository.save(mantenimiento));
+        sincronizarEstadoVehiculo(mantenimiento.getVehiculoId(), mantenimiento.getEstado(), null);
+        return respuesta;
     }
 
     @Override
@@ -61,8 +64,11 @@ public class MantenimientoServiceImpl implements MantenimientoService {
         validar(request);
         vehiculoService.buscarPorId(request.vehiculoId());
 
+        EstadoMantenimiento estadoAnterior = mantenimiento.getEstado();
         aplicar(mantenimiento, request, mantenimiento.getFecha());
-        return aRespuesta(repository.save(mantenimiento));
+        MantenimientoResponse respuesta = aRespuesta(repository.save(mantenimiento));
+        sincronizarEstadoVehiculo(mantenimiento.getVehiculoId(), mantenimiento.getEstado(), estadoAnterior);
+        return respuesta;
     }
 
     @Override
@@ -71,6 +77,23 @@ public class MantenimientoServiceImpl implements MantenimientoService {
         Mantenimiento mantenimiento = repository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mantenimiento", id));
         repository.delete(mantenimiento);
+        if (mantenimiento.getEstado() != EstadoMantenimiento.COMPLETADO) {
+            vehiculoService.cambiarEstado(mantenimiento.getVehiculoId(), EstadoVehiculo.OPERATIVO);
+        }
+    }
+
+    /**
+     * EN_PROCESO envía el vehículo al taller; COMPLETADO lo devuelve a operativo.
+     * Si un mantenimiento en curso vuelve a PENDIENTE, el vehículo también se libera.
+     */
+    private void sincronizarEstadoVehiculo(Long vehiculoId, EstadoMantenimiento estado,
+                                           EstadoMantenimiento estadoAnterior) {
+        if (estado == EstadoMantenimiento.EN_PROCESO) {
+            vehiculoService.cambiarEstado(vehiculoId, EstadoVehiculo.EN_TALLER);
+        } else if (estado == EstadoMantenimiento.COMPLETADO
+                || (estado == EstadoMantenimiento.PENDIENTE && estadoAnterior == EstadoMantenimiento.EN_PROCESO)) {
+            vehiculoService.cambiarEstado(vehiculoId, EstadoVehiculo.OPERATIVO);
+        }
     }
 
     private void validar(MantenimientoRequest request) {

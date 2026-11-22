@@ -9,6 +9,7 @@ const TITULOS = {
   matriculas: "Matrículas",
   pagos: "Pagos",
   paquetes: "Paquetes",
+  promociones: "Promociones",
   clases: "Clases",
   vehiculos: "Vehículos",
   instructores: "Instructores",
@@ -16,23 +17,26 @@ const TITULOS = {
   mantenimiento: "Mantenimiento",
   ausencias: "Ausencias y reprogramaciones",
   reportes: "Reportes",
-  historial: "Historial"
+  historial: "Historial",
+  notificaciones: "Notificaciones"
 };
 
 const PERMISOS = {
   dashboard: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"],
-  alumnos: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
-  matriculas: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
-  pagos: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
-  paquetes: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
-  clases: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"],
-  vehiculos: ["PROPIETARIO", "ADMINISTRADOR", "ENCARGADO_FLOTAS"],
-  instructores: ["PROPIETARIO", "ADMINISTRADOR", "ENCARGADO_FLOTAS", "INSTRUCTOR"],
-  asistencia: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
-  mantenimiento: ["PROPIETARIO", "ADMINISTRADOR", "ENCARGADO_FLOTAS"],
-  ausencias: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
-  reportes: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
-  historial: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"]
+  matriculas: ["ADMINISTRADOR", "RECEPCIONISTA", "ALUMNO"],
+  pagos: ["ADMINISTRADOR"],
+  clases: ["ADMINISTRADOR", "INSTRUCTOR"],
+  vehiculos: ["ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS"],
+  instructores: ["ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS"],
+  asistencia: ["ADMINISTRADOR", "INSTRUCTOR"],
+  reportes: ["ADMINISTRADOR", "PROPIETARIO"],
+  mantenimiento: ["ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS"],
+  paquetes: ["ADMINISTRADOR", "RECEPCIONISTA", "PROPIETARIO"],
+  promociones: ["ADMINISTRADOR", "RECEPCIONISTA", "PROPIETARIO"],
+  ausencias: ["ADMINISTRADOR", "ALUMNO"],
+  historial: ["ADMINISTRADOR", "ALUMNO"],
+  alumnos: ["ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR", "ALUMNO"],
+  notificaciones: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"]
 };
 
 const ROLES_LOGIN = {
@@ -49,6 +53,7 @@ const ENTIDADES = {
   matriculas: { endpoint: "/matriculas", form: "matriculaForm", render: renderMatriculas },
   pagos: { endpoint: "/pagos", form: "pagoForm", render: renderPagos },
   paquetes: { endpoint: "/paquetes", form: "paqueteForm", render: renderPaquetes },
+  promociones: { endpoint: "/promociones", form: "promocionForm", render: renderPromociones },
   clases: { endpoint: "/clases", form: "claseForm", render: renderClases },
   vehiculos: { endpoint: "/vehiculos", form: "vehiculoForm", render: renderVehiculos },
   instructores: { endpoint: "/instructores", form: "instructorForm", render: renderInstructores },
@@ -115,7 +120,7 @@ function mostrarModal(titulo, contenido) {
 
 /* ---------- Cliente HTTP (capa de acceso a la API) ---------- */
 async function api(path, opciones = {}) {
-  const headers = { Accept: "application/json" };
+  const headers = { Accept: opciones.accept || "application/json" };
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
   if (opciones.body !== undefined) headers["Content-Type"] = "application/json";
 
@@ -208,10 +213,11 @@ async function renderSection() {
   try {
     const vistas = {
       dashboard: renderDashboard, alumnos: renderAlumnos, matriculas: renderMatriculas,
-      pagos: renderPagos, paquetes: renderPaquetes, clases: renderClases,
-      vehiculos: renderVehiculos, instructores: renderInstructores,
+      pagos: renderPagos, paquetes: renderPaquetes, promociones: renderPromociones,
+      clases: renderClases, vehiculos: renderVehiculos, instructores: renderInstructores,
       asistencia: renderAsistencia, mantenimiento: renderMantenimiento,
-      ausencias: renderAusencias, reportes: renderReportes, historial: renderHistorial
+      ausencias: renderAusencias, reportes: renderReportes, historial: renderHistorial,
+      notificaciones: renderNotificaciones
     };
     await (vistas[state.currentSection] || renderDashboard)();
   } catch (error) {
@@ -346,17 +352,20 @@ async function renderMatriculas() {
             <div class="form-group"><label>Estado</label><select name="estado">
               <option value="POR_PAGAR">Por pagar</option><option value="CONFIRMADA">Confirmada</option>
               <option value="CANCELADA">Cancelada</option><option value="VENCIDA">Vencida</option></select></div>
+            <div class="form-group"><label>Código de promoción (opcional)</label><input name="codigoPromocion" placeholder="Ej. PROMO2026" /></div>
           </div>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar matrícula</button>
             <button type="button" class="mini-btn" data-action="limpiar" data-form="matriculaForm">Limpiar</button></div>
         </form>
       </div>
       <div class="data-table-card"><div class="table-header"><h3>Listado de matrículas</h3></div>
-        <table><thead><tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+        <table><thead><tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Precio final</th><th>Descuento</th><th>Promoción</th><th>Acciones</th></tr></thead>
           <tbody>${matriculas.length ? matriculas.map(m => `
             <tr><td>${esc(m.alumnoNombre)}</td><td>${esc(m.paquete)}</td><td>${estadoHtml(m.estado)}</td>
-            <td>${esc(m.fecha)}</td><td>${botonesEditarEliminar("matriculas", m.id)}</td></tr>`).join("")
-            : tablaVacia(5, "No hay matrículas.")}</tbody></table>
+            <td>${esc(m.fecha)}</td><td>${m.precioFinal != null ? dinero(m.precioFinal) : "-"}</td>
+            <td>${m.descuento ? dinero(m.descuento) : "-"}</td><td>${m.codigoPromocion ? esc(m.codigoPromocion) : "-"}</td>
+            <td>${botonesEditarEliminar("matriculas", m.id)}</td></tr>`).join("")
+            : tablaVacia(8, "No hay matrículas.")}</tbody></table>
       </div>
     </div>`;
 }
@@ -378,16 +387,20 @@ async function renderPagos() {
             <div class="form-group"><label>Comprobante (opcional)</label><input name="comprobante" placeholder="Se genera automáticamente" /></div>
             <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
           </div>
+          <p style="font-size: 0.8rem; color: var(--gris-700); margin-top: 10px;">
+            Se permiten pagos parciales: el saldo pendiente se calcula automáticamente.
+          </p>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar pago</button></div>
         </form>
       </div>
       <div class="data-table-card"><div class="table-header"><h3>Listado de pagos</h3></div>
-        <table><thead><tr><th>Alumno</th><th>Monto</th><th>Método</th><th>Comprobante</th><th>Fecha</th><th>Acciones</th></tr></thead>
+        <table><thead><tr><th>Alumno</th><th>Monto</th><th>Tipo</th><th>Saldo pendiente</th><th>Método</th><th>Comprobante</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>${pagos.length ? pagos.map(p => `
-            <tr><td>${esc(p.alumnoNombre)}</td><td>${dinero(p.monto)}</td><td>${esc(etiqueta(p.metodo))}</td>
+            <tr><td>${esc(p.alumnoNombre)}</td><td>${dinero(p.monto)}</td><td>${estadoHtml(p.tipo)}</td>
+            <td>${dinero(p.saldoPendiente)}</td><td>${esc(etiqueta(p.metodo))}</td>
             <td><button class="edit-btn" data-action="comprobante" data-id="${p.id}">${esc(p.comprobante)}</button></td>
             <td>${esc(p.fecha)}</td><td><button class="delete-btn" data-action="delete" data-entidad="pagos" data-id="${p.id}">Eliminar</button></td></tr>`).join("")
-            : tablaVacia(6, "No hay pagos.")}</tbody></table>
+            : tablaVacia(8, "No hay pagos.")}</tbody></table>
       </div>
     </div>`;
 }
@@ -431,6 +444,37 @@ async function renderPaquetes() {
             <td>${dinero(p.precio)}</td><td>${p.vigente ? estadoHtml("VIGENTE") : estadoHtml("NO_VIGENTE")}</td>
             <td>${botonesEditarEliminar("paquetes", p.id)}</td></tr>`).join("")
             : tablaVacia(6, "No hay paquetes.")}</tbody></table>
+      </div>
+    </div>`;
+}
+
+/* ---------- Promociones ---------- */
+async function renderPromociones() {
+  const promociones = await api("/promociones");
+  contenedor().innerHTML = `
+    <div class="section-shell">
+      <div class="form-card"><h3>Gestionar promoción</h3>
+        <form id="promocionForm">
+          <div class="form-grid two">
+            <div class="form-group"><label>Código</label><input name="codigo" required /></div>
+            <div class="form-group"><label>Descripción</label><input name="descripcion" required /></div>
+            <div class="form-group"><label>Porcentaje de descuento</label><input name="porcentajeDescuento" type="number" min="0" max="100" step="0.01" required /></div>
+            <div class="form-group"><label>Fecha inicio</label><input name="fechaInicio" type="date" value="${hoy()}" required /></div>
+            <div class="form-group"><label>Fecha fin</label><input name="fechaFin" type="date" required /></div>
+          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar promoción</button>
+            <button type="button" class="mini-btn" data-action="limpiar" data-form="promocionForm">Limpiar</button></div>
+        </form>
+      </div>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de promociones</h3></div>
+        <table><thead><tr><th>Código</th><th>Descripción</th><th>Descuento</th><th>Vigencia</th><th>Fecha fin</th><th>Activa hoy</th><th>Acciones</th></tr></thead>
+          <tbody>${promociones.length ? promociones.map(p => `
+            <tr><td>${esc(p.codigo)}</td><td>${esc(p.descripcion)}</td><td>${esc(p.porcentajeDescuento)}%</td>
+            <td>${p.vigente ? estadoHtml("VIGENTE") : estadoHtml("NO_VIGENTE")}</td>
+            <td>${esc(p.fechaFin)}</td>
+            <td>${estadoHtml(p.activaHoy ? "ACTIVA_HOY" : "NO_ACTIVA_HOY")}</td>
+            <td>${botonesEditarEliminar("promociones", p.id)}</td></tr>`).join("")
+            : tablaVacia(7, "No hay promociones.")}</tbody></table>
       </div>
     </div>`;
 }
@@ -642,7 +686,8 @@ async function renderReportes() {
           <div class="form-group"><label>Desde</label><input id="reporteDesde" type="date" value="${esc(state.filtros.desde)}" /></div>
           <div class="form-group"><label>Hasta</label><input id="reporteHasta" type="date" value="${esc(state.filtros.hasta)}" /></div>
         </div>
-        <div class="form-actions"><button class="action-btn" data-action="filtrar-reporte">Generar reporte</button></div>
+        <div class="form-actions"><button class="action-btn" data-action="filtrar-reporte">Generar reporte</button>
+          <button class="secondary-btn" data-action="descargar-csv">Descargar CSV</button></div>
       </div>
       <section class="stats-grid">
         <article class="stat-card blue"><small>Ingresos totales</small><h3>${dinero(r.totalIngresos)}</h3><span>Periodo seleccionado</span></article>
@@ -666,15 +711,17 @@ async function renderReportes() {
 
 /* ---------- Historial ---------- */
 async function renderHistorial() {
-  const alumnos = await api("/alumnos");
+  const esAlumno = state.currentUser?.rol === "ALUMNO";
+  const alumnos = esAlumno ? [] : await api("/alumnos");
   contenedor().innerHTML = `
     <div class="section-shell">
+      ${esAlumno ? "" : `
       <div class="form-card"><h3>Consultar historial</h3>
         <div class="form-grid two">
           <div class="form-group" style="grid-column: span 2;"><label>Alumno</label>
             <select id="historialAlumnoSelect">${opciones(alumnos, a => `${a.nombre} ${a.apellidos}`)}</select></div>
         </div>
-      </div>
+      </div>`}
       <div class="data-table-card"><div class="table-header"><h3>Historial académico</h3></div>
         <table><thead><tr><th>Fecha</th><th>Paquete</th><th>Estado</th><th>Clase</th><th>Asistencia</th><th>Calificación</th></tr></thead>
           <tbody id="historialAcademico"><tr><td colspan="6">Seleccione un alumno.</td></tr></tbody></table></div>
@@ -683,6 +730,10 @@ async function renderHistorial() {
           <tbody id="historialFinanciero"><tr><td colspan="4">Seleccione un alumno.</td></tr></tbody></table></div>
     </div>`;
 
+  if (esAlumno) {
+    await cargarHistorial();
+    return;
+  }
   const select = document.getElementById("historialAlumnoSelect");
   if (alumnos.length) {
     select.value = alumnos[0].id;
@@ -691,13 +742,14 @@ async function renderHistorial() {
 }
 
 async function cargarHistorial(alumnoId) {
-  if (!alumnoId) return;
+  const esAlumno = state.currentUser?.rol === "ALUMNO";
+  if (!esAlumno && !alumnoId) return;
   const academicas = document.getElementById("historialAcademico");
   const financieras = document.getElementById("historialFinanciero");
   if (!academicas || !financieras) return;
   academicas.innerHTML = `<tr><td colspan="6">Cargando...</td></tr>`;
   try {
-    const h = await api(`/historial/alumnos/${alumnoId}`);
+    const h = await api(esAlumno ? "/historial/mi" : `/historial/alumnos/${alumnoId}`);
     academicas.innerHTML = h.academico.length ? h.academico.map(x => `
       <tr><td>${esc(x.fecha)}</td><td>${esc(x.paquete)}</td><td>${estadoHtml(x.estado)}</td>
       <td>${esc(x.clase)}</td><td>${esc(x.asistencia)}</td><td>${esc(x.calificacion ?? "-")}</td></tr>`).join("")
@@ -709,12 +761,29 @@ async function cargarHistorial(alumnoId) {
   } catch (error) { notificar(error.message, "error"); }
 }
 
+/* ---------- Notificaciones ---------- */
+async function renderNotificaciones() {
+  const notificaciones = await api("/notificaciones");
+  contenedor().innerHTML = `
+    <div class="section-shell">
+      <div class="data-table-card"><div class="table-header"><h3>Notificaciones</h3></div>
+        <table><thead><tr><th>Tipo</th><th>Título</th><th>Mensaje</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${notificaciones.length ? notificaciones.map(n => `
+            <tr><td>${esc(etiqueta(n.tipo))}</td><td>${esc(n.titulo)}</td><td>${esc(n.mensaje)}</td>
+            <td>${esc(n.fecha)}</td><td>${estadoHtml(n.leida ? "LEIDA" : "PENDIENTE")}</td>
+            <td>${n.leida ? "-" : `<button class="edit-btn" data-action="marcar-leida" data-id="${n.id}">Marcar leída</button>`}</td></tr>`).join("")
+            : tablaVacia(6, "No hay notificaciones.")}</tbody></table>
+      </div>
+    </div>`;
+}
+
 /* ---------- Construcción de payloads ---------- */
 const PAYLOADS = {
   alumnoForm: d => ({ nombre: d.nombre, apellidos: d.apellidos, dni: d.dni, email: d.email, telefono: d.telefono, direccion: d.direccion, fechaRegistro: d.fechaRegistro || hoy() }),
-  matriculaForm: d => ({ alumnoId: Number(d.alumnoId), paqueteId: Number(d.paqueteId), estado: d.estado, fecha: d.fecha }),
+  matriculaForm: d => ({ alumnoId: Number(d.alumnoId), paqueteId: Number(d.paqueteId), estado: d.estado, fecha: d.fecha, codigoPromocion: d.codigoPromocion?.trim() || null }),
   pagoForm: d => ({ matriculaId: Number(d.matriculaId), monto: Number(d.monto), metodo: d.metodo, comprobante: d.comprobante || "", fecha: d.fecha }),
   paqueteForm: d => ({ nombre: d.nombre, categoria: d.categoria, numeroClases: Number(d.numeroClases), precio: Number(d.precio) }),
+  promocionForm: d => ({ codigo: d.codigo, descripcion: d.descripcion, porcentajeDescuento: Number(d.porcentajeDescuento), fechaInicio: d.fechaInicio, fechaFin: d.fechaFin }),
   claseForm: d => ({ nombre: d.nombre, fecha: d.fecha, horaInicio: d.horaInicio, horaFin: d.horaFin, alumnoId: Number(d.alumnoId), instructorId: Number(d.instructorId), vehiculoId: Number(d.vehiculoId), estado: d.estado }),
   vehiculoForm: d => ({ placa: d.placa, marca: d.marca, modelo: d.modelo, estado: d.estado }),
   instructorForm: d => ({ nombre: d.nombre, especialidad: d.especialidad, telefono: d.telefono, disponible: d.disponible === "true" }),
@@ -729,7 +798,7 @@ const PAYLOADS = {
 
 const FORM_A_ENTIDAD = {
   alumnoForm: "alumnos", matriculaForm: "matriculas", pagoForm: "pagos", paqueteForm: "paquetes",
-  claseForm: "clases", vehiculoForm: "vehiculos", instructorForm: "instructores",
+  promocionForm: "promociones", claseForm: "clases", vehiculoForm: "vehiculos", instructorForm: "instructores",
   asistenciaForm: "asistencias", mantenimientoForm: "mantenimientos", ausenciaForm: "reprogramaciones"
 };
 
@@ -819,6 +888,36 @@ document.addEventListener("click", async function (e) {
 
   if (accion === "comprobante") {
     await verComprobante(target.dataset.id);
+    return;
+  }
+
+  if (accion === "marcar-leida") {
+    try {
+      await api(`/notificaciones/${target.dataset.id}/leida`, { method: "PATCH" });
+      notificar("Notificación marcada como leída");
+      await renderNotificaciones();
+    } catch (error) { notificar(error.message, "error"); }
+    return;
+  }
+
+  if (accion === "descargar-csv") {
+    const desde = document.getElementById("reporteDesde")?.value || state.filtros.desde;
+    const hasta = document.getElementById("reporteHasta")?.value || state.filtros.hasta;
+    const params = new URLSearchParams({ formato: "csv" });
+    if (desde) params.set("desde", desde);
+    if (hasta) params.set("hasta", hasta);
+    try {
+      const csv = await api("/reportes/ingresos?" + params, { accept: "text/csv" });
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const enlace = document.createElement("a");
+      enlace.href = url;
+      enlace.download = "reporte-ingresos.csv";
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      URL.revokeObjectURL(url);
+      notificar("Reporte CSV descargado correctamente");
+    } catch (error) { notificar(error.message, "error"); }
     return;
   }
 

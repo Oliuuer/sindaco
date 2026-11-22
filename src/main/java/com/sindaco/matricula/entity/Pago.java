@@ -3,8 +3,14 @@ package com.sindaco.matricula.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.sindaco.matricula.enums.TipoPago;
+
+import org.hibernate.annotations.ColumnDefault;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,15 +41,31 @@ public class Pago {
     @Column(nullable = false)
     private LocalDate fecha = LocalDate.now();
 
+    /**
+     * TOTAL cuando cancela el saldo; FRACCIONADO cuando es un abono.
+     * La columna es nullable y tiene valor por defecto para que la migración
+     * automática de Hibernate funcione aunque la tabla ya tenga pagos antiguos.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_pago", length = 20)
+    @ColumnDefault("'TOTAL'")
+    private TipoPago tipoPago = TipoPago.TOTAL;
+
     public Pago() {
     }
 
     public Pago(Long matriculaId, BigDecimal monto, String metodo, String comprobante, LocalDate fecha) {
+        this(matriculaId, monto, metodo, comprobante, fecha, TipoPago.TOTAL);
+    }
+
+    public Pago(Long matriculaId, BigDecimal monto, String metodo, String comprobante, LocalDate fecha,
+                TipoPago tipoPago) {
         this.matriculaId = matriculaId;
         this.monto = monto;
         this.metodo = metodo;
         this.comprobante = comprobante;
         this.fecha = fecha;
+        this.tipoPago = tipoPago == null ? TipoPago.TOTAL : tipoPago;
     }
 
     public Long getId() {
@@ -92,5 +114,13 @@ public class Pago {
 
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
+    }
+
+    public TipoPago getTipoPago() {
+        return tipoPago;
+    }
+
+    public void setTipoPago(TipoPago tipoPago) {
+        this.tipoPago = tipoPago;
     }
 }

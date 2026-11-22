@@ -11,5 +11,7 @@ public record PagoResponse(
         BigDecimal monto,
         String metodo,
         String comprobante,
-        LocalDate fecha) {
+        LocalDate fecha,
+        BigDecimal saldoPendiente,
+        String tipo) {
 }

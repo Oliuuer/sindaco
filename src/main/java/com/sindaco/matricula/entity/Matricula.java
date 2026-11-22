@@ -1,5 +1,6 @@
 package com.sindaco.matricula.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.sindaco.matricula.enums.EstadoMatricula;
@@ -34,6 +35,18 @@ public class Matricula {
 
     @Column(nullable = false)
     private LocalDate fecha = LocalDate.now();
+
+    /** Precio vigente de la matrícula después de aplicar la promoción (CU08). */
+    @Column(name = "precio_final", precision = 12, scale = 2)
+    private BigDecimal precioFinal;
+
+    /** Descuento aplicado en moneda, no en porcentaje (CU08). */
+    @Column(precision = 12, scale = 2)
+    private BigDecimal descuento = BigDecimal.ZERO;
+
+    /** Código de la promoción aplicada, si la hubo (CU08). */
+    @Column(name = "codigo_promocion", length = 30)
+    private String codigoPromocion;
 
     public Matricula() {
     }
@@ -83,5 +96,29 @@ public class Matricula {
 
     public void setFecha(LocalDate fecha) {
         this.fecha = fecha;
+    }
+
+    public BigDecimal getPrecioFinal() {
+        return precioFinal;
+    }
+
+    public void setPrecioFinal(BigDecimal precioFinal) {
+        this.precioFinal = precioFinal;
+    }
+
+    public BigDecimal getDescuento() {
+        return descuento;
+    }
+
+    public void setDescuento(BigDecimal descuento) {
+        this.descuento = descuento;
+    }
+
+    public String getCodigoPromocion() {
+        return codigoPromocion;
+    }
+
+    public void setCodigoPromocion(String codigoPromocion) {
+        this.codigoPromocion = codigoPromocion;
     }
 }

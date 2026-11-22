@@ -26,14 +26,23 @@ public class Usuario {
     @Column(nullable = false)
     private boolean activo = true;
 
+    /** Alumno vinculado al usuario; permite acotar el historial del rol ALUMNO (CU10). */
+    @Column(name = "alumno_id")
+    private Long alumnoId;
+
     public Usuario() {
     }
 
     public Usuario(String username, String password, String nombre, Rol rol) {
+        this(username, password, nombre, rol, null);
+    }
+
+    public Usuario(String username, String password, String nombre, Rol rol, Long alumnoId) {
         this.username = username;
         this.password = password;
         this.nombre = nombre;
         this.rol = rol;
+        this.alumnoId = alumnoId;
     }
 
     public Long getId() { return id; }
@@ -48,4 +57,6 @@ public class Usuario {
     public void setRol(Rol rol) { this.rol = rol; }
     public boolean isActivo() { return activo; }
     public void setActivo(boolean activo) { this.activo = activo; }
+    public Long getAlumnoId() { return alumnoId; }
+    public void setAlumnoId(Long alumnoId) { this.alumnoId = alumnoId; }
 }

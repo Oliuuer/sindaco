@@ -20,4 +20,14 @@ public interface ClaseService {
 
     /** Clases asignadas a un instructor; útil para otros módulos (académico, reportes). */
     List<ClaseResponse> listarPorInstructor(Long instructorId);
+
+    /**
+     * Reutiliza las reglas de disponibilidad de la agenda (instructor, vehículo
+     * operativo y ausencia de solapamientos) sin Guardar cambios. La usa el módulo
+     * de reprogramaciones (CU09) antes de mover una clase.
+     *
+     * @param idClase id de la clase que se está reprogramando, para excluirla del
+     *                control de solapamientos
+     */
+    void validarDisponibilidad(ClaseRequest request, Long idClase);
 }

@@ -28,7 +28,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public List<UsuarioResponse> listar() {
         return repository.findAll().stream()
-                .map(u -> new UsuarioResponse(u.getId(), u.getUsername(), u.getNombre(), u.getRol().name()))
+                .map(u -> new UsuarioResponse(u.getId(), u.getUsername(), u.getNombre(), u.getRol().name(),
+                        u.getAlumnoId()))
                 .toList();
     }
 
@@ -39,9 +40,10 @@ public class UsuarioServiceImpl implements UsuarioService {
             throw new ConflictoException("Ya existe un usuario con ese nombre: " + request.username());
         }
         Usuario usuario = new Usuario(request.username(), passwordEncoder.encode(request.password()),
-                request.nombre(), request.rol());
+                request.nombre(), request.rol(), request.alumnoId());
         Usuario guardado = repository.save(usuario);
-        return new UsuarioResponse(guardado.getId(), guardado.getUsername(), guardado.getNombre(), guardado.getRol().name());
+        return new UsuarioResponse(guardado.getId(), guardado.getUsername(), guardado.getNombre(),
+                guardado.getRol().name(), guardado.getAlumnoId());
     }
 
     @Override

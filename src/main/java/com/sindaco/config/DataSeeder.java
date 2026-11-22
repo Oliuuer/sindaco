@@ -31,6 +31,9 @@ import com.sindaco.matricula.entity.Matricula;
 import com.sindaco.matricula.entity.Pago;
 import com.sindaco.matricula.entity.Paquete;
 import com.sindaco.matricula.enums.EstadoMatricula;
+import com.sindaco.matricula.enums.TipoPago;
+import com.sindaco.matricula.promocion.entity.Promocion;
+import com.sindaco.matricula.promocion.repository.PromocionRepository;
 import com.sindaco.matricula.repository.AlumnoRepository;
 import com.sindaco.matricula.repository.MatriculaRepository;
 import com.sindaco.matricula.repository.PagoRepository;
@@ -49,6 +52,7 @@ public class DataSeeder implements CommandLineRunner {
     private final PaqueteRepository paqueteRepository;
     private final MatriculaRepository matriculaRepository;
     private final PagoRepository pagoRepository;
+    private final PromocionRepository promocionRepository;
     private final InstructorRepository instructorRepository;
     private final VehiculoRepository vehiculoRepository;
     private final ClaseRepository claseRepository;
@@ -59,7 +63,7 @@ public class DataSeeder implements CommandLineRunner {
     public DataSeeder(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
                       AlumnoRepository alumnoRepository, PaqueteRepository paqueteRepository,
                       MatriculaRepository matriculaRepository, PagoRepository pagoRepository,
-                      InstructorRepository instructorRepository, VehiculoRepository vehiculoRepository,
+                      PromocionRepository promocionRepository, InstructorRepository instructorRepository, VehiculoRepository vehiculoRepository,
                       ClaseRepository claseRepository, AsistenciaRepository asistenciaRepository,
                       ReprogramacionRepository reprogramacionRepository,
                       MantenimientoRepository mantenimientoRepository) {
@@ -69,6 +73,7 @@ public class DataSeeder implements CommandLineRunner {
         this.paqueteRepository = paqueteRepository;
         this.matriculaRepository = matriculaRepository;
         this.pagoRepository = pagoRepository;
+        this.promocionRepository = promocionRepository;
         this.instructorRepository = instructorRepository;
         this.vehiculoRepository = vehiculoRepository;
         this.claseRepository = claseRepository;
@@ -80,15 +85,39 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (usuarioRepository.count() == 0) {
-            sembrarUsuarios();
-        }
         if (alumnoRepository.count() == 0) {
             sembrarDatosAcademicos();
         }
+        if (usuarioRepository.count() == 0) {
+            sembrarUsuarios();
+        }
+        if (promocionRepository.count() == 0) {
+            sembrarPromociones();
+        }
+        normalizarTiposPago();
+        vincularAlumnoUsuario();
+    }
+
+    /** Completa el tipo de los pagos creados antes de añadir la columna tipo_pago. */
+    private void normalizarTiposPago() {
+        pagoRepository.findAll().stream()
+                .filter(pago -> pago.getTipoPago() == null)
+                .forEach(pago -> {
+                    pago.setTipoPago(TipoPago.TOTAL);
+                    pagoRepository.save(pago);
+                });
+    }
+
+    private void sembrarPromociones() {
+        LocalDate hoy = LocalDate.now();
+        promocionRepository.save(new Promocion("PROMO2026", "Descuento de temporada para matrículas 2026",
+                new BigDecimal("15.00"), hoy.minusDays(30), hoy.plusDays(60), true));
+        promocionRepository.save(new Promocion("PROMOANTIGUA", "Promoción de campaña anterior",
+                new BigDecimal("10.00"), hoy.minusDays(120), hoy.minusDays(60), false));
     }
 
     private void sembrarUsuarios() {
+        Long alumnoId = alumnoRepository.findAll().stream().findFirst().map(Alumno::getId).orElse(null);
         usuarioRepository.save(new Usuario("propietario@sindaco.com", passwordEncoder.encode("pass123"),
                 "Juan Pérez", Rol.PROPIETARIO));
         usuarioRepository.save(new Usuario("admin@sindaco.com", passwordEncoder.encode("pass123"),
@@ -100,7 +129,20 @@ public class DataSeeder implements CommandLineRunner {
         usuarioRepository.save(new Usuario("instructor@sindaco.com", passwordEncoder.encode("pass123"),
                 "Carlos López", Rol.INSTRUCTOR));
         usuarioRepository.save(new Usuario("alumno@sindaco.com", passwordEncoder.encode("pass123"),
-                "Pedro Martínez", Rol.ALUMNO));
+                "Pedro Martínez", Rol.ALUMNO, alumnoId));
+    }
+
+    /** Garantiza que el usuario alumno tenga vinculado un alumno aunque ya existiera en la BD. */
+    private void vincularAlumnoUsuario() {
+        usuarioRepository.findByUsername("alumno@sindaco.com").ifPresent(usuario -> {
+            if (usuario.getAlumnoId() == null) {
+                alumnoRepository.findAll().stream().findFirst().map(Alumno::getId)
+                        .ifPresent(alumnoId -> {
+                            usuario.setAlumnoId(alumnoId);
+                            usuarioRepository.save(usuario);
+                        });
+            }
+        });
     }
 
     private void sembrarDatosAcademicos() {

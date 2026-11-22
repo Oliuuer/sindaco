@@ -1,8 +1,8 @@
 # SINDACO – Sistema web de gestión de la Escuela de Manejo
 
-Sistema integral para gestionar **matrículas, pagos, comprobantes, clases, instructores, vehículos, asistencia, evaluaciones, mantenimiento, ausencias/reprogramaciones, reportes de ingresos e historial** de una escuela de manejo.
+Sistema integral para gestionar **matrículas, pagos, comprobantes, promociones, clases, instructores, vehículos, asistencia, evaluaciones, mantenimiento, ausencias/reprogramaciones, notificaciones, reportes de ingresos e historial** de una escuela de manejo.
 
-> **Estado: backend y frontend completos.** API REST con arquitectura N capas, autenticación JWT con 6 roles, PostgreSQL y frontend responsive conectado a la API (sin datos simulados).
+> **Estado: backend y frontend completos.** API REST con arquitectura N capas, autenticación JWT con 6 roles, PostgreSQL y frontend responsive conectado a la API (sin datos simulados). Reglas de negocio de los 10 casos de uso implementadas y verificadas con pruebas automáticas.
 
 ## 1. Tecnologías
 
@@ -15,6 +15,7 @@ Sistema integral para gestionar **matrículas, pagos, comprobantes, clases, inst
 | Seguridad | Spring Security + JWT (HMAC-SHA256), 6 roles |
 | Validación | Jakarta Bean Validation |
 | Construcción | Maven 3.9+ |
+| Pruebas | JUnit 5, Mockito y AssertJ |
 | Frontend | HTML5 + CSS3 + JavaScript (vanilla, `fetch`) |
 | Documentación | [Arquitectura](docs/ARQUITECTURA.md) · [Contrato API](docs/CONTRATO_API.md) |
 
@@ -51,9 +52,9 @@ Sistema integral para gestionar **matrículas, pagos, comprobantes, clases, inst
 | instructor@sindaco.com | Instructor |
 | alumno@sindaco.com | Alumno |
 
-El menú de navegación y los permisos de la API se aplican según el rol.
+El menú de navegación y la API aplican la misma matriz de permisos por rol. El usuario alumno queda vinculado a un alumno de ejemplo para que `/api/historial/mi` devuelva solo su historial.
 
-Al arrancar por primera vez, `DataSeeder` crea usuarios y datos de ejemplo (paquetes, alumnos, matrículas, pagos, instructores, vehículos, clases, asistencias, mantenimientos y ausencias). Si ya existen datos, no los duplica.
+Al arrancar por primera vez, `DataSeeder` crea usuarios y datos de ejemplo (paquetes, promociones, alumnos, matrículas, pagos, instructores, vehículos, clases, asistencias, mantenimientos y ausencias). Si ya existen datos, no los duplica.
 
 ## 4. Arquitectura
 
@@ -61,14 +62,14 @@ Al arrancar por primera vez, `DataSeeder` crea usuarios y datos de ejemplo (paqu
 
 ```
 Frontend (index.html + app.js + estilo.css)   ← Capa 1 · Presentación
-        │ fetch /api/... (JSON + JWT)
-        ▼
+         │ fetch /api/... (JSON + JWT)
+         ▼
 Controller  → valida @Valid y delega          ← Capa 1 · Presentación
-        ▼
+         ▼
 Service     → reglas de negocio, transacciones← Capa 2 · Aplicación
-        ▼
+         ▼
 Repository  → JPA / JPQL                      ← Capa 4 · Persistencia
-        ▼
+         ▼
 Entity      → modelo de datos                 ← Capa 3 · Dominio
 
 Config, Security (JWT), excepciones y seeder  ← Capa 5 · Infraestructura
@@ -89,52 +90,87 @@ sindaco/
 ├── pom.xml
 ├── docs/
 │   ├── ARQUITECTURA.md       Arquitectura N capas y reglas
-│   └── CONTRATO_API.md       Todos los endpoints y DTOs
-└── src/main/
-    ├── java/com/sindaco/
+│   ├── CONTRATO_API.md       Todos los endpoints y DTOs
+│   └── APF2_SECCION_3.8.docx Avance 3 (patrones MVC y DAO)
+└── src/
+    ├── main/java/com/sindaco/
     │   ├── SindacoApplication.java
     │   ├── config/            SecurityConfig, JwtService, JwtAuthenticationFilter, DataSeeder
-    │   ├── comun/             ApiError, excepciones, GlobalExceptionHandler
+    │   ├── comun/             ApiError, excepciones, GlobalExceptionHandler, notificacion/
     │   ├── seguridad/         Usuario, Rol, AuthService, UsuarioService, controllers
-    │   ├── matricula/         Alumno, Matricula, Pago, Paquete (CU01, CU02, CU08)
+    │   ├── matricula/         Alumno, Matricula, Pago, Paquete, promocion/ (CU01, CU02, CU08)
     │   ├── agenda/            Clase, Instructor, Vehiculo (CU03, CU04)
-    │   ├── academico/         AsistenciaEvaluacion, Reprogramacion, Reportes, Historial (CU05, CU06, CU09, CU10)
-    │   └── mantenimiento/     Mantenimiento (CU07)
-    └── resources/
-        ├── application.properties
-        └── static/            index.html, app.js, estilo.css
+    │   ├── academico/         Asistencia, Reprogramacion, Reportes, Historial (CU05, CU06, CU09, CU10)
+    │   ├── mantenimiento/     Mantenimiento (CU07)
+    │   └── patrones/          MVC y DAO reales documentados en la sección 3.8
+    ├── main/resources/
+    │   ├── application.properties
+    │   └── static/            index.html, app.js, estilo.css
+    └── test/java/com/sindaco/ Pruebas unitarias de pagos y clases
 ```
 
 ## 6. Módulos y casos de uso
 
-| Módulo | Caso de uso | Endpoint principal | Estado |
+| Módulo | Caso de uso | Endpoint principal | Reglas incluidas |
 |---|---|---|---|
-| seguridad | Inicio de sesión y roles · JWT | `/api/auth/login`, `/api/auth/me` | ✅ |
-| matricula | CU01 Registrar Matrícula | `/api/alumnos`, `/api/matriculas` | ✅ |
-| matricula | CU02 Registrar Pago y Comprobante | `/api/pagos` | ✅ |
-| matricula | CU08 Paquetes y promociones | `/api/paquetes` | ✅ |
-| agenda | CU03 Programar Clases | `/api/clases` | ✅ |
-| agenda | CU04 Asignar Instructor y Vehículo | `/api/instructores`, `/api/vehiculos` | ✅ |
-| academico | CU05 Asistencia y Evaluación | `/api/asistencias` | ✅ |
-| academico | CU09 Ausencias y Reprogramaciones | `/api/reprogramaciones` | ✅ |
-| academico | CU10 Historial Académico y Financiero | `/api/historial/alumnos/{id}` | ✅ |
-| academico | CU06 Reporte de Ingresos | `/api/reportes/ingresos` | ✅ |
-| mantenimiento | CU07 Mantenimiento de Vehículos | `/api/mantenimientos` | ✅ |
+| seguridad | Inicio de sesión y roles · JWT | `/api/auth/login`, `/api/auth/me` | 6 roles, matriz de permisos |
+| matricula | CU01 Registrar Matrícula | `/api/matriculas` | Promoción vigente, precio final, notificación |
+| matricula | CU02 Registrar Pago y Comprobante | `/api/pagos` | Saldo, pagos fraccionados, estado de matrícula, notificación |
+| matricula | CU08 Paquetes y promociones | `/api/paquetes`, `/api/promociones` | Vigencia, descuento por porcentaje |
+| agenda | CU03 Programar Clases | `/api/clases` | Solapamientos, instructor disponible, vehículo operativo |
+| agenda | CU04 Asignar Instructor y Vehículo | `/api/instructores`, `/api/vehiculos` | Cambio de estado de vehículo |
+| academico | CU05 Asistencia y Evaluación | `/api/asistencias` | Nota y observaciones |
+| academico | CU09 Ausencias y Reprogramaciones | `/api/reprogramaciones` | Disponibilidad, mover clase, notificación |
+| academico | CU10 Historial Académico y Financiero | `/api/historial/alumnos/{id}`, `/api/historial/mi` | Acceso del alumno a su propio historial |
+| academico | CU06 Reporte de Ingresos | `/api/reportes/ingresos` | Exportación CSV y notificación al MTC |
+| mantenimiento | CU07 Mantenimiento de Vehículos | `/api/mantenimientos` | Vehículo en taller / operativo |
+| comun | Notificaciones | `/api/notificaciones` | Registro y lectura de avisos |
 
 El detalle de todos los endpoints, cuerpos y respuestas está en [`docs/CONTRATO_API.md`](docs/CONTRATO_API.md).
 
+### Matriz de permisos
+
+| Caso de uso | Roles |
+|---|---|
+| CU01 Matrículas | Alumno, Recepcionista, Administrador |
+| CU02 Pagos | Administrador |
+| CU03 Clases | Administrador, Instructor |
+| CU04 Instructores y vehículos | Administrador, Instructor, Encargado de Flota |
+| CU05 Asistencia | Administrador, Instructor |
+| CU06 Reportes | Administrador, Propietario |
+| CU07 Mantenimiento | Administrador, Instructor, Encargado de Flota |
+| CU08 Paquetes y promociones | Administrador, Recepcionista, Propietario |
+| CU09 Reprogramaciones | Administrador, Alumno |
+| CU10 Historial | Administrador, Alumno |
+
 ## 7. Frontend
 
-Aplicación de una página responsive con 13 secciones: Dashboard, Alumnos, Matrículas, Pagos, Paquetes, Clases, Vehículos, Instructores, Asistencia, Mantenimiento, Ausencias, Reportes e Historial.
+Aplicación de una página responsive con **15 secciones**: Dashboard, Alumnos, Matrículas, Pagos, Paquetes, Promociones, Clases, Vehículos, Instructores, Asistencia, Mantenimiento, Ausencias, Notificaciones, Reportes e Historial.
 
 - **Sin datos simulados**: todas las operaciones usan `fetch` contra la API REST.
 - **Autenticación**: guarda el JWT en `localStorage` y lo envía en cada petición.
 - **Roles**: oculta secciones no permitidas y la API valida los permisos.
-- **CRUD completo** en todas las secciones, con formularios reutilizables para crear/editar, confirmación al eliminar y notificaciones.
-- **Reportes** con filtro de fechas y **historial** por alumno.
+- **CRUD completo** en todas las secciones, con formularios reutilizables, confirmación al eliminar y notificaciones.
+- **Matrículas**: selección opcional de código de promoción; muestra precio final, descuento y saldo.
+- **Pagos**: muestra tipo (`TOTAL`/`FRACCIONADO`) y saldo pendiente; admite pagos parciales.
+- **Reportes**: filtro de fechas y descarga CSV.
+- **Historial**: el alumno consulta `/api/historial/mi`; los demás roles eligen el alumno.
 - **Comprobantes de pago** consultables desde el listado de pagos.
 
-## 8. Pruebas rápidas de la API
+## 8. Pruebas
+
+```bash
+mvn test
+```
+
+Las pruebas unitarias (`src/test/java`) cubren:
+
+- `PagoServiceImplTest`: pago parcial con saldo, pago total que confirma la matrícula, rechazo de montos que superan el saldo y recálculo del estado al eliminar un pago.
+- `ClaseServiceImplTest`: solapamiento de instructor/vehículo, vehículo en taller, instructor no disponible, creación válida y validación reutilizable de disponibilidad.
+
+También puede comprobarse el empaquetado completo con `mvn clean package` (ejecuta las pruebas y genera el JAR).
+
+## 9. Pruebas rápidas de la API
 
 ```bash
 # Login (devuelve token)
@@ -145,11 +181,11 @@ curl -X POST http://localhost:8080/api/auth/login \
 # Listar alumnos (reemplazar TOKEN)
 curl -H "Authorization: Bearer TOKEN" http://localhost:8080/api/alumnos
 
-# Reporte de ingresos
-curl -H "Authorization: Bearer TOKEN" "http://localhost:8080/api/reportes/ingresos"
+# Reporte de ingresos en CSV
+curl -H "Authorization: Bearer TOKEN" "http://localhost:8080/api/reportes/ingresos?formato=csv" -o reporte-ingresos.csv
 ```
 
-## 9. Convenciones
+## 10. Convenciones
 
 - Paquetes en minúscula: `com.sindaco.<modulo>.<capa>`.
 - Clases: `Alumno` (entidad), `AlumnoRequest`/`AlumnoResponse` (DTO), `AlumnoRepository`, `AlumnoService` + `AlumnoServiceImpl`, `AlumnoController`.

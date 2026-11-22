@@ -51,7 +51,8 @@ public class AuthService {
     public UsuarioResponse me(String username) {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", null));
-        return new UsuarioResponse(usuario.getId(), usuario.getUsername(), usuario.getNombre(), usuario.getRol().name());
+        return new UsuarioResponse(usuario.getId(), usuario.getUsername(), usuario.getNombre(), usuario.getRol().name(),
+                usuario.getAlumnoId());
     }
 
     @Transactional

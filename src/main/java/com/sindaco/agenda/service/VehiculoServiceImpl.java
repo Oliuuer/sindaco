@@ -62,6 +62,16 @@ public class VehiculoServiceImpl implements VehiculoService {
         repository.delete(buscarEntidad(id));
     }
 
+    @Override
+    public VehiculoResponse cambiarEstado(Long id, EstadoVehiculo estado) {
+        if (estado == null) {
+            throw new ReglaNegocioException("El estado del vehículo es obligatorio");
+        }
+        Vehiculo vehiculo = buscarEntidad(id);
+        vehiculo.setEstado(estado);
+        return mapear(repository.save(vehiculo));
+    }
+
     private Vehiculo buscarEntidad(Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Vehículo", id));

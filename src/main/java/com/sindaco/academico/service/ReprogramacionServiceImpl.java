@@ -13,9 +13,13 @@ import com.sindaco.academico.dto.ReprogramacionResponse;
 import com.sindaco.academico.entity.Reprogramacion;
 import com.sindaco.academico.enums.EstadoReprogramacion;
 import com.sindaco.academico.repository.ReprogramacionRepository;
+import com.sindaco.agenda.dto.ClaseRequest;
+import com.sindaco.agenda.dto.ClaseResponse;
+import com.sindaco.agenda.enums.EstadoClase;
 import com.sindaco.agenda.service.ClaseService;
 import com.sindaco.comun.exception.RecursoNoEncontradoException;
 import com.sindaco.comun.exception.ReglaNegocioException;
+import com.sindaco.comun.notificacion.service.NotificacionService;
 import com.sindaco.matricula.service.AlumnoService;
 
 /** Implementación de reprogramaciones y control de ausencias (CU09). */
@@ -26,12 +30,14 @@ public class ReprogramacionServiceImpl implements ReprogramacionService {
     private final ReprogramacionRepository repository;
     private final ClaseService claseService;
     private final AlumnoService alumnoService;
+    private final NotificacionService notificacionService;
 
     public ReprogramacionServiceImpl(ReprogramacionRepository repository, ClaseService claseService,
-            AlumnoService alumnoService) {
+            AlumnoService alumnoService, NotificacionService notificacionService) {
         this.repository = repository;
         this.claseService = claseService;
         this.alumnoService = alumnoService;
+        this.notificacionService = notificacionService;
     }
 
     @Override
@@ -51,11 +57,22 @@ public class ReprogramacionServiceImpl implements ReprogramacionService {
     public ReprogramacionResponse crear(ReprogramacionRequest request) {
         validar(request);
         alumnoService.buscarPorId(request.alumnoId());
-        var clase = claseService.buscarPorId(request.claseId());
+        ClaseResponse clase = claseService.buscarPorId(request.claseId());
+
+        ClaseRequest nuevaClase = construirClaseReprogramada(request, clase);
+        claseService.validarDisponibilidad(nuevaClase, clase.id());
+        claseService.actualizar(clase.id(), nuevaClase);
 
         Reprogramacion reprogramacion = new Reprogramacion();
         aplicar(reprogramacion, request, clase.fecha());
-        return aRespuesta(repository.save(reprogramacion));
+        ReprogramacionResponse respuesta = aRespuesta(repository.save(reprogramacion));
+
+        notificacionService.registrar("REPROGRAMACION", "Clase reprogramada",
+                "Se reprogramó la clase \"" + texto(clase.nombre()) + "\" para el "
+                        + respuesta.nuevaFecha() + " a las " + texto(respuesta.nuevaHoraInicio())
+                        + ". Motivo: " + respuesta.motivo(),
+                "INSTRUCTOR", request.alumnoId());
+        return respuesta;
     }
 
     @Override
@@ -77,6 +94,29 @@ public class ReprogramacionServiceImpl implements ReprogramacionService {
         Reprogramacion reprogramacion = repository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Reprogramación", id));
         repository.delete(reprogramacion);
+    }
+
+    /** Si el frente no envía un dato nuevo, se conserva el de la clase original. */
+    private ClaseRequest construirClaseReprogramada(ReprogramacionRequest request, ClaseResponse clase) {
+        String fecha = request.nuevaFecha() != null && !request.nuevaFecha().isBlank()
+                ? request.nuevaFecha()
+                : texto(clase.fecha());
+        String inicio = request.nuevaHoraInicio() != null && !request.nuevaHoraInicio().isBlank()
+                ? request.nuevaHoraInicio()
+                : texto(clase.horaInicio());
+        String fin = request.nuevaHoraFin() != null && !request.nuevaHoraFin().isBlank()
+                ? request.nuevaHoraFin()
+                : texto(clase.horaFin());
+
+        return new ClaseRequest(
+                clase.nombre(),
+                fecha,
+                inicio,
+                fin,
+                clase.alumnoId(),
+                clase.instructorId(),
+                clase.vehiculoId(),
+                EstadoClase.CONFIRMADA.name());
     }
 
     private void validar(ReprogramacionRequest request) {

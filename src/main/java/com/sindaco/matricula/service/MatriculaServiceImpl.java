@@ -1,5 +1,7 @@
 package com.sindaco.matricula.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -9,12 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sindaco.comun.exception.RecursoNoEncontradoException;
 import com.sindaco.comun.exception.ReglaNegocioException;
+import com.sindaco.comun.notificacion.service.NotificacionService;
 import com.sindaco.matricula.dto.MatriculaRequest;
 import com.sindaco.matricula.dto.MatriculaResponse;
 import com.sindaco.matricula.entity.Alumno;
 import com.sindaco.matricula.entity.Matricula;
 import com.sindaco.matricula.entity.Paquete;
 import com.sindaco.matricula.enums.EstadoMatricula;
+import com.sindaco.matricula.promocion.service.PromocionService;
 import com.sindaco.matricula.repository.AlumnoRepository;
 import com.sindaco.matricula.repository.MatriculaRepository;
 import com.sindaco.matricula.repository.PaqueteRepository;
@@ -25,12 +29,17 @@ public class MatriculaServiceImpl implements MatriculaService {
     private final MatriculaRepository repository;
     private final AlumnoRepository alumnoRepository;
     private final PaqueteRepository paqueteRepository;
+    private final PromocionService promocionService;
+    private final NotificacionService notificacionService;
 
     public MatriculaServiceImpl(MatriculaRepository repository, AlumnoRepository alumnoRepository,
-            PaqueteRepository paqueteRepository) {
+            PaqueteRepository paqueteRepository, PromocionService promocionService,
+            NotificacionService notificacionService) {
         this.repository = repository;
         this.alumnoRepository = alumnoRepository;
         this.paqueteRepository = paqueteRepository;
+        this.promocionService = promocionService;
+        this.notificacionService = notificacionService;
     }
 
     @Override
@@ -61,7 +70,7 @@ public class MatriculaServiceImpl implements MatriculaService {
     @Transactional
     public MatriculaResponse crear(MatriculaRequest request) {
         validarAlumno(request.alumnoId());
-        validarPaqueteVigente(request.paqueteId());
+        Paquete paquete = paqueteVigente(request.paqueteId());
 
         EstadoMatricula estado = request.estado() != null ? request.estado() : EstadoMatricula.POR_PAGAR;
         Matricula matricula = new Matricula(
@@ -70,7 +79,14 @@ public class MatriculaServiceImpl implements MatriculaService {
                 estado,
                 parsearFecha(request.fecha()));
 
-        return aRespuesta(repository.save(matricula));
+        aplicarPromocion(matricula, paquete, request.codigoPromocion());
+        MatriculaResponse respuesta = aRespuesta(repository.save(matricula));
+
+        notificacionService.registrar("MATRICULA", "Matrícula registrada",
+                "Se registró la matrícula del alumno " + respuesta.alumnoNombre()
+                        + " en el paquete " + respuesta.paquete(),
+                "RECEPCIONISTA", request.alumnoId());
+        return respuesta;
     }
 
     @Override
@@ -80,12 +96,13 @@ public class MatriculaServiceImpl implements MatriculaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Matrícula", id));
 
         validarAlumno(request.alumnoId());
-        validarPaqueteVigente(request.paqueteId());
+        Paquete paquete = paqueteVigente(request.paqueteId());
 
         matricula.setAlumnoId(request.alumnoId());
         matricula.setPaqueteId(request.paqueteId());
         matricula.setEstado(request.estado() != null ? request.estado() : EstadoMatricula.POR_PAGAR);
         matricula.setFecha(parsearFecha(request.fecha()));
+        aplicarPromocion(matricula, paquete, request.codigoPromocion());
 
         return aRespuesta(repository.save(matricula));
     }
@@ -99,17 +116,33 @@ public class MatriculaServiceImpl implements MatriculaService {
         repository.deleteById(id);
     }
 
+    /** Aplica la promoción vigente, si se indicó, y guarda el precio final y el descuento. */
+    private void aplicarPromocion(Matricula matricula, Paquete paquete, String codigoPromocion) {
+        BigDecimal precioBase = paquete.getPrecio();
+        String codigo = codigoPromocion == null || codigoPromocion.isBlank()
+                ? null
+                : codigoPromocion.trim().toUpperCase(java.util.Locale.ROOT);
+
+        BigDecimal precioFinal = promocionService.aplicarDescuento(precioBase, codigo);
+        BigDecimal descuento = precioBase.subtract(precioFinal).setScale(2, RoundingMode.HALF_UP);
+
+        matricula.setPrecioFinal(precioFinal);
+        matricula.setDescuento(descuento);
+        matricula.setCodigoPromocion(codigo);
+    }
+
     private void validarAlumno(Long alumnoId) {
         alumnoRepository.findById(alumnoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Alumno", alumnoId));
     }
 
-    private void validarPaqueteVigente(Long paqueteId) {
+    private Paquete paqueteVigente(Long paqueteId) {
         Paquete paquete = paqueteRepository.findById(paqueteId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Paquete", paqueteId));
         if (!paquete.isVigente()) {
             throw new ReglaNegocioException("No se puede registrar una matrícula con un paquete que no está vigente");
         }
+        return paquete;
     }
 
     private LocalDate parsearFecha(String fecha) {
@@ -129,6 +162,12 @@ public class MatriculaServiceImpl implements MatriculaService {
         String alumnoNombre = alumno == null ? "" : alumno.getNombre() + " " + alumno.getApellidos();
         String paqueteNombre = paquete == null ? "" : paquete.getNombre();
 
+        BigDecimal precioFinal = matricula.getPrecioFinal();
+        if (precioFinal == null) {
+            precioFinal = paquete == null ? BigDecimal.ZERO : paquete.getPrecio();
+        }
+        BigDecimal descuento = matricula.getDescuento() == null ? BigDecimal.ZERO : matricula.getDescuento();
+
         return new MatriculaResponse(
                 matricula.getId(),
                 matricula.getAlumnoId(),
@@ -136,6 +175,9 @@ public class MatriculaServiceImpl implements MatriculaService {
                 matricula.getPaqueteId(),
                 paqueteNombre,
                 matricula.getEstado(),
-                matricula.getFecha());
+                matricula.getFecha(),
+                precioFinal,
+                descuento,
+                matricula.getCodigoPromocion());
     }
 }

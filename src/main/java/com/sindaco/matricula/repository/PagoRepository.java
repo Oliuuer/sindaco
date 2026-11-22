@@ -1,5 +1,6 @@
 package com.sindaco.matricula.repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +24,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     @Query("SELECT p FROM Pago p WHERE p.comprobante = :comprobante")
     Optional<Pago> findByComprobante(@Param("comprobante") String comprobante);
+
+    /** Suma de todos los abonos de una matrícula; cero cuando todavía no tiene pagos. */
+    @Query("SELECT COALESCE(SUM(p.monto), 0) FROM Pago p WHERE p.matriculaId = :matriculaId")
+    BigDecimal sumarPorMatricula(@Param("matriculaId") Long matriculaId);
 }

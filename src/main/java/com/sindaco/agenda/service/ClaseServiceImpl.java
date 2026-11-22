@@ -97,6 +97,12 @@ public class ClaseServiceImpl implements ClaseService {
         repository.delete(buscarEntidad(id));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public void validarDisponibilidad(ClaseRequest request, Long idClase) {
+        validar(request, idClase);
+    }
+
     /**
      * Aplica todas las reglas de negocio compartidas por crear y actualizar:
      * existencia de alumno, instructor y vehículo, disponibilidad, estado

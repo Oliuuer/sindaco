@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -39,18 +40,52 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/login", "/", "/index.html", "/app.js", "/estilo.css",
                         "/favicon.ico", "/error").permitAll()
-                .requestMatchers("/api/reportes/**", "/api/historial/**")
-                    .hasAnyRole("PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA")
-                .requestMatchers("/api/mantenimientos/**", "/api/vehiculos/**")
-                    .hasAnyRole("ADMINISTRADOR", "ENCARGADO_FLOTAS", "PROPIETARIO")
+
+                // CU01 · matrículas: alumno, recepcionista y administrador
+                .requestMatchers("/api/matriculas/**")
+                    .hasAnyRole("ALUMNO", "RECEPCIONISTA", "ADMINISTRADOR")
+                // CU02 · pagos y comprobantes: solo administrador
+                .requestMatchers("/api/pagos/**")
+                    .hasAnyRole("ADMINISTRADOR")
+                // CU03 · clases: administrador e instructor
+                .requestMatchers("/api/clases/**")
+                    .hasAnyRole("ADMINISTRADOR", "INSTRUCTOR")
+                // CU04 · instructores y vehículos
+                .requestMatchers("/api/instructores/**", "/api/vehiculos/**")
+                    .hasAnyRole("ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS")
+                // CU05 · asistencia y evaluación
                 .requestMatchers("/api/asistencias/**")
-                    .hasAnyRole("ADMINISTRADOR", "INSTRUCTOR", "PROPIETARIO", "RECEPCIONISTA")
+                    .hasAnyRole("ADMINISTRADOR", "INSTRUCTOR")
+                // CU06 · reporte de ingresos
+                .requestMatchers("/api/reportes/**")
+                    .hasAnyRole("ADMINISTRADOR", "PROPIETARIO")
+                // CU07 · mantenimiento de vehículos
+                .requestMatchers("/api/mantenimientos/**")
+                    .hasAnyRole("ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS")
+                // CU08 · paquetes y promociones. El alumno puede consultarlos para matricularse.
+                .requestMatchers(HttpMethod.GET, "/api/paquetes/**", "/api/promociones/**")
+                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "PROPIETARIO", "ALUMNO")
+                .requestMatchers("/api/paquetes/**", "/api/promociones/**")
+                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "PROPIETARIO")
+                // CU09 · ausencias y reprogramaciones
+                .requestMatchers("/api/reprogramaciones/**")
+                    .hasAnyRole("ADMINISTRADOR", "ALUMNO")
+                // CU10 · historial
+                .requestMatchers("/api/historial/**")
+                    .hasAnyRole("ADMINISTRADOR", "ALUMNO")
+
+                // Apoyo a los formularios: lectura de alumnos para roles que operan matrículas o clases.
+                .requestMatchers(HttpMethod.GET, "/api/alumnos/**")
+                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR", "ALUMNO")
+                .requestMatchers("/api/alumnos/**")
+                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR")
                 .requestMatchers("/api/usuarios/**")
                     .hasAnyRole("ADMINISTRADOR", "PROPIETARIO")
-                .requestMatchers("/api/**").authenticated()
+                .requestMatchers("/api/notificaciones/**", "/api/auth/me").authenticated()
+                .requestMatchers("/api/**").denyAll()
                 .anyRequest().permitAll())
             .exceptionHandling(e -> e
                 .authenticationEntryPoint((request, response, ex) ->
