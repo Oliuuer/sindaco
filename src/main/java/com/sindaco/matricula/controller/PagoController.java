@@ -1,5 +1,6 @@
 package com.sindaco.matricula.controller;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import com.sindaco.matricula.dto.ComprobanteResponse;
 import com.sindaco.matricula.dto.PagoRequest;
 import com.sindaco.matricula.dto.PagoResponse;
 import com.sindaco.matricula.service.PagoService;
+import com.sindaco.seguridad.service.UsuarioActualService;
 
 import jakarta.validation.Valid;
 
@@ -26,14 +28,22 @@ import jakarta.validation.Valid;
 public class PagoController {
 
     private final PagoService service;
+    private final UsuarioActualService usuarioActual;
 
-    public PagoController(PagoService service) {
+    public PagoController(PagoService service, UsuarioActualService usuarioActual) {
         this.service = service;
+        this.usuarioActual = usuarioActual;
     }
 
     @GetMapping
     public List<PagoResponse> listar() {
         return service.listar();
+    }
+
+    /** Portal del alumno: pagos realizados sobre sus propias matrículas. */
+    @GetMapping("/mi")
+    public List<PagoResponse> mi(Principal principal) {
+        return service.listarPorAlumno(usuarioActual.alumnoId(principal));
     }
 
     @GetMapping("/{id}")

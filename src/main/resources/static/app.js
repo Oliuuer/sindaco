@@ -5,6 +5,9 @@ const USER_KEY = "sindaco_user";
 
 const TITULOS = {
   dashboard: "Dashboard",
+  misMatriculas: "Mis matrículas",
+  misClases: "Mis clases y horarios",
+  misPagos: "Mis pagos realizados",
   alumnos: "Alumnos",
   matriculas: "Matrículas",
   pagos: "Pagos",
@@ -23,7 +26,11 @@ const TITULOS = {
 
 const PERMISOS = {
   dashboard: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"],
-  matriculas: ["ADMINISTRADOR", "RECEPCIONISTA", "ALUMNO"],
+  // Portal del alumno: el alumno solo navega por sus propios datos.
+  misMatriculas: ["ALUMNO"],
+  misClases: ["ALUMNO"],
+  misPagos: ["ALUMNO"],
+  matriculas: ["ADMINISTRADOR", "RECEPCIONISTA"],
   pagos: ["ADMINISTRADOR"],
   clases: ["ADMINISTRADOR", "INSTRUCTOR"],
   vehiculos: ["ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS"],
@@ -33,9 +40,9 @@ const PERMISOS = {
   mantenimiento: ["ADMINISTRADOR", "INSTRUCTOR", "ENCARGADO_FLOTAS"],
   paquetes: ["ADMINISTRADOR", "RECEPCIONISTA", "PROPIETARIO"],
   promociones: ["ADMINISTRADOR", "RECEPCIONISTA", "PROPIETARIO"],
-  ausencias: ["ADMINISTRADOR", "ALUMNO"],
+  ausencias: ["ADMINISTRADOR"],
   historial: ["ADMINISTRADOR", "ALUMNO"],
-  alumnos: ["ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR", "ALUMNO"],
+  alumnos: ["ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
   notificaciones: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"]
 };
 
@@ -49,6 +56,10 @@ const ROLES_LOGIN = {
 };
 
 const ENTIDADES = {
+  // Portal del alumno: las tres vistas usan endpoints /mi y no exponen formularios globales.
+  misMatriculas: { endpoint: "/matriculas", form: "matriculaAlumnoForm", render: renderMisMatriculas },
+  misClases: { endpoint: "/clases/mi", render: renderMisClases },
+  misPagos: { endpoint: "/pagos/mi", render: renderMisPagos },
   alumnos: { endpoint: "/alumnos", form: "alumnoForm", render: renderAlumnos },
   matriculas: { endpoint: "/matriculas", form: "matriculaForm", render: renderMatriculas },
   pagos: { endpoint: "/pagos", form: "pagoForm", render: renderPagos },
@@ -77,7 +88,8 @@ function esc(valor) {
 }
 
 function hoy() {
-  return new Date().toISOString().split("T")[0];
+  const fecha = new Date();
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
 }
 
 function dinero(valor) {
@@ -212,7 +224,9 @@ async function renderSection() {
   cargando();
   try {
     const vistas = {
-      dashboard: renderDashboard, alumnos: renderAlumnos, matriculas: renderMatriculas,
+      dashboard: renderDashboard, misMatriculas: renderMisMatriculas,
+      misClases: renderMisClases, misPagos: renderMisPagos,
+      alumnos: renderAlumnos, matriculas: renderMatriculas,
       pagos: renderPagos, paquetes: renderPaquetes, promociones: renderPromociones,
       clases: renderClases, vehiculos: renderVehiculos, instructores: renderInstructores,
       asistencia: renderAsistencia, mantenimiento: renderMantenimiento,
@@ -244,6 +258,11 @@ function botonesEditarEliminar(entidad, id) {
 
 /* ---------- Dashboard ---------- */
 async function renderDashboard() {
+  // El alumno nunca consulta los indicadores globales: ve un resumen de su propio portal.
+  if (state.currentUser?.rol === "ALUMNO") {
+    await renderDashboardAlumno();
+    return;
+  }
   const reporteVacio = { totalIngresos: 0, totalPagos: 0, promedioPago: 0, porMetodo: [], porMes: [] };
   const [reporte, alumnos, clases, matriculas, paquetes, mantenimientos] = await Promise.all([
     api("/reportes/ingresos").catch(() => reporteVacio),
@@ -306,6 +325,143 @@ async function renderDashboard() {
         </div>
       </div>
     </section>`;
+}
+
+/* ---------- Portal del alumno ---------- */
+function soloHora(valor) {
+  return String(valor ?? "").slice(0, 5) || "-";
+}
+
+/** Resumen personal: sustituye al dashboard global para el rol ALUMNO. */
+async function renderDashboardAlumno() {
+  const [matriculas, clases, pagos] = await Promise.all([
+    api("/matriculas/mi"), api("/clases/mi"), api("/pagos/mi")
+  ]);
+  const proximas = clases.filter(c => String(c.fecha) >= hoy());
+  const totalPagado = pagos.reduce((suma, p) => suma + Number(p.monto || 0), 0);
+  const saldoPorMatricula = new Map();
+  [...pagos]
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)) || (a.id - b.id))
+    .forEach(p => saldoPorMatricula.set(p.matriculaId, Number(p.saldoPendiente || 0)));
+  const saldoPendiente = [...saldoPorMatricula.values()].reduce((suma, valor) => suma + valor, 0);
+
+  contenedor().innerHTML = `
+    <section class="stats-grid">
+      <article class="stat-card blue"><small>Mis matrículas</small><h3>${matriculas.length}</h3><span>Registradas</span></article>
+      <article class="stat-card"><small>Próximas clases</small><h3>${proximas.length}</h3><span>En mi horario</span></article>
+      <article class="stat-card"><small>Pagos realizados</small><h3>${pagos.length}</h3><span>Comprobantes</span></article>
+      <article class="stat-card"><small>Total pagado</small><h3>${dinero(totalPagado)}</h3><span>Acumulado</span></article>
+      <article class="stat-card"><small>Saldo pendiente</small><h3>${dinero(saldoPendiente)}</h3><span>Según mis pagos</span></article>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel large">
+        <div class="panel-header"><h3>Mis próximas clases</h3></div>
+        <ul class="list-compact">${proximas.length ? proximas.slice(0, 6).map(c => `
+          <li><strong>${esc(c.nombre)}</strong><span>${esc(c.fecha)} ${soloHora(c.horaInicio)} - ${soloHora(c.horaFin)} · ${esc(c.instructorNombre || "-")}</span></li>`).join("")
+          : `<li><span>No tiene clases próximas programadas.</span></li>`}</ul>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><h3>Mis últimos pagos</h3></div>
+        <ul class="list-compact">${pagos.length ? pagos.slice(0, 6).map(p => `
+          <li><strong>${esc(p.fecha)}</strong><span>${dinero(p.monto)} · ${esc(p.comprobante || "-")}</span></li>`).join("")
+          : `<li><span>Aún no registra pagos.</span></li>`}</ul>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel large">
+        <div class="panel-header"><h3>Mis matrículas</h3></div>
+        <table><thead><tr><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Precio final</th><th>Descuento</th></tr></thead>
+          <tbody>${matriculas.length ? matriculas.map(m => `
+            <tr><td>${esc(m.paquete)}</td><td>${estadoHtml(m.estado)}</td><td>${esc(m.fecha)}</td>
+            <td>${m.precioFinal != null ? dinero(m.precioFinal) : "-"}</td>
+            <td>${m.descuento ? dinero(m.descuento) : "-"}</td></tr>`).join("")
+            : tablaVacia(5, "Todavía no está matriculado.")}</tbody></table>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><h3>Mi portal</h3></div>
+        <div class="requirements-grid">
+          <div class="requirement-item"><span>CU01</span><p>Matricúlate desde «Mis matrículas».</p></div>
+          <div class="requirement-item"><span>CU03</span><p>Consulta tus horarios en «Mis clases».</p></div>
+          <div class="requirement-item"><span>CU02</span><p>Revisa fechas y comprobantes en «Mis pagos».</p></div>
+          <div class="requirement-item"><span>CU10</span><p>Consulta tu historial académico y financiero.</p></div>
+        </div>
+      </div>
+    </section>`;
+}
+
+/** El alumno se matricula a sí mismo; la API fuerza su alumnoId y el estado POR_PAGAR. */
+async function renderMisMatriculas() {
+  const [matriculas, paquetes] = await Promise.all([
+    api("/matriculas/mi"), api("/paquetes?soloVigentes=true")
+  ]);
+  contenedor().innerHTML = `
+    <div class="section-shell">
+      <div class="form-card"><h3>Matricularme en un paquete</h3>
+        <form id="matriculaAlumnoForm">
+          <div class="form-grid two">
+            <div class="form-group"><label>Paquete</label><select name="paqueteId" required>${opciones(paquetes, p => `${p.nombre} - ${dinero(p.precio)}`)}</select></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
+            <div class="form-group" style="grid-column: span 2;"><label>Código de promoción (opcional)</label><input name="codigoPromocion" placeholder="Ej. PROMO2026" /></div>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--gris-700); margin-top: 10px;">
+            La matrícula se registra como «Por pagar». El pago se registra en recepción.
+          </p>
+          <div class="form-actions"><button type="submit" class="action-btn">Matricularme</button>
+            <button type="button" class="mini-btn" data-action="limpiar" data-form="matriculaAlumnoForm">Limpiar</button></div>
+        </form>
+      </div>
+      <div class="data-table-card"><div class="table-header"><h3>Mis matrículas</h3></div>
+        <table><thead><tr><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Precio final</th><th>Descuento</th><th>Promoción</th><th>Acciones</th></tr></thead>
+          <tbody>${matriculas.length ? matriculas.map(m => `
+            <tr><td>${esc(m.paquete)}</td><td>${estadoHtml(m.estado)}</td><td>${esc(m.fecha)}</td>
+            <td>${m.precioFinal != null ? dinero(m.precioFinal) : "-"}</td>
+            <td>${m.descuento ? dinero(m.descuento) : "-"}</td><td>${m.codigoPromocion ? esc(m.codigoPromocion) : "-"}</td>
+            <td><button class="delete-btn" data-action="delete" data-entidad="misMatriculas" data-id="${m.id}">Cancelar</button></td></tr>`).join("")
+            : tablaVacia(7, "Todavía no está matriculado.")}</tbody></table>
+      </div>
+    </div>`;
+}
+
+/** Horarios del alumno, ordenados por fecha y hora desde la API. */
+async function renderMisClases() {
+  const clases = await api("/clases/mi");
+  contenedor().innerHTML = `
+    <div class="section-shell">
+      <div class="data-table-card"><div class="table-header"><h3>Mis clases y horarios</h3></div>
+        <table><thead><tr><th>Clase</th><th>Fecha</th><th>Horario</th><th>Instructor</th><th>Vehículo</th><th>Estado</th></tr></thead>
+          <tbody>${clases.length ? clases.map(c => `
+            <tr><td>${esc(c.nombre)}</td><td>${esc(c.fecha)}</td>
+            <td>${soloHora(c.horaInicio)} - ${soloHora(c.horaFin)}</td>
+            <td>${esc(c.instructorNombre || "-")}</td><td>${esc(c.vehiculoPlaca || "-")}</td>
+            <td>${estadoHtml(c.estado)}</td></tr>`).join("")
+            : tablaVacia(6, "No tiene clases asignadas todavía.")}</tbody></table>
+      </div>
+    </div>`;
+}
+
+/** Pagos realizados sobre las matrículas del alumno, con fechas y comprobantes. */
+async function renderMisPagos() {
+  const [pagos, matriculas] = await Promise.all([api("/pagos/mi"), api("/matriculas/mi")]);
+  const paquetePorMatricula = new Map(matriculas.map(m => [m.id, m.paquete]));
+  const totalPagado = pagos.reduce((suma, p) => suma + Number(p.monto || 0), 0);
+
+  contenedor().innerHTML = `
+    <div class="section-shell">
+      <section class="stats-grid">
+        <article class="stat-card blue"><small>Pagos realizados</small><h3>${pagos.length}</h3><span>Comprobantes</span></article>
+        <article class="stat-card"><small>Total pagado</small><h3>${dinero(totalPagado)}</h3><span>Acumulado</span></article>
+      </section>
+      <div class="data-table-card"><div class="table-header"><h3>Fechas de mis pagos</h3></div>
+        <table><thead><tr><th>Fecha de pago</th><th>Paquete</th><th>Monto</th><th>Tipo</th><th>Saldo pendiente</th><th>Método</th><th>Comprobante</th></tr></thead>
+          <tbody>${pagos.length ? pagos.map(p => `
+            <tr><td>${esc(p.fecha)}</td><td>${esc(paquetePorMatricula.get(p.matriculaId) || "-")}</td>
+            <td>${dinero(p.monto)}</td><td>${estadoHtml(p.tipo)}</td><td>${dinero(p.saldoPendiente)}</td>
+            <td>${esc(etiqueta(p.metodo))}</td><td>${esc(p.comprobante || "-")}</td></tr>`).join("")
+            : tablaVacia(7, "Aún no registra pagos realizados.")}</tbody></table>
+      </div>
+    </div>`;
 }
 
 /* ---------- Alumnos ---------- */
@@ -781,6 +937,7 @@ async function renderNotificaciones() {
 const PAYLOADS = {
   alumnoForm: d => ({ nombre: d.nombre, apellidos: d.apellidos, dni: d.dni, email: d.email, telefono: d.telefono, direccion: d.direccion, fechaRegistro: d.fechaRegistro || hoy() }),
   matriculaForm: d => ({ alumnoId: Number(d.alumnoId), paqueteId: Number(d.paqueteId), estado: d.estado, fecha: d.fecha, codigoPromocion: d.codigoPromocion?.trim() || null }),
+  matriculaAlumnoForm: d => ({ alumnoId: state.currentUser?.alumnoId, paqueteId: Number(d.paqueteId), estado: "POR_PAGAR", fecha: d.fecha, codigoPromocion: d.codigoPromocion?.trim() || null }),
   pagoForm: d => ({ matriculaId: Number(d.matriculaId), monto: Number(d.monto), metodo: d.metodo, comprobante: d.comprobante || "", fecha: d.fecha }),
   paqueteForm: d => ({ nombre: d.nombre, categoria: d.categoria, numeroClases: Number(d.numeroClases), precio: Number(d.precio) }),
   promocionForm: d => ({ codigo: d.codigo, descripcion: d.descripcion, porcentajeDescuento: Number(d.porcentajeDescuento), fechaInicio: d.fechaInicio, fechaFin: d.fechaFin }),
@@ -797,6 +954,7 @@ const PAYLOADS = {
 };
 
 const FORM_A_ENTIDAD = {
+  matriculaAlumnoForm: "misMatriculas",
   alumnoForm: "alumnos", matriculaForm: "matriculas", pagoForm: "pagos", paqueteForm: "paquetes",
   promocionForm: "promociones", claseForm: "clases", vehiculoForm: "vehiculos", instructorForm: "instructores",
   asistenciaForm: "asistencias", mantenimientoForm: "mantenimientos", ausenciaForm: "reprogramaciones"
@@ -825,8 +983,11 @@ document.getElementById("loginForm").addEventListener("submit", async function (
       body: { username: email, password, rol: ROLES_LOGIN[rol] || rol }
     });
     state.token = respuesta.token;
-    state.currentUser = { username: respuesta.username, nombre: respuesta.nombre, rol: respuesta.rol };
     localStorage.setItem(TOKEN_KEY, state.token);
+    // /auth/me incluye alumnoId, necesario para que el alumno se matricule a sí mismo.
+    state.currentUser = await api("/auth/me").catch(() => ({
+      username: respuesta.username, nombre: respuesta.nombre, rol: respuesta.rol
+    }));
     localStorage.setItem(USER_KEY, JSON.stringify(state.currentUser));
     msg.textContent = "Acceso correcto. Redirigiendo...";
     msg.className = "login-message success";

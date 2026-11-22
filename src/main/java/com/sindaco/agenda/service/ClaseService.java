@@ -21,6 +21,9 @@ public interface ClaseService {
     /** Clases asignadas a un instructor; útil para otros módulos (académico, reportes). */
     List<ClaseResponse> listarPorInstructor(Long instructorId);
 
+    /** Horarios de un alumno; lo usa el portal del alumno (CU03). */
+    List<ClaseResponse> listarPorAlumno(Long alumnoId);
+
     /**
      * Reutiliza las reglas de disponibilidad de la agenda (instructor, vehículo
      * operativo y ausencia de solapamientos) sin Guardar cambios. La usa el módulo

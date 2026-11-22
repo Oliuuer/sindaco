@@ -65,6 +65,14 @@ public class PagoServiceImpl implements PagoService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<PagoResponse> listarPorAlumno(Long alumnoId) {
+        return repository.findByAlumnoId(alumnoId).stream()
+                .map(this::aRespuesta)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<PagoResponse> listarPorFecha(LocalDate desde, LocalDate hasta) {
         if (desde == null || hasta == null) {
             throw new ReglaNegocioException("Las fechas desde y hasta son obligatorias");

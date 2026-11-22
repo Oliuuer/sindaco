@@ -1,5 +1,6 @@
 package com.sindaco.agenda.controller;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sindaco.agenda.dto.ClaseRequest;
 import com.sindaco.agenda.dto.ClaseResponse;
 import com.sindaco.agenda.service.ClaseService;
+import com.sindaco.seguridad.service.UsuarioActualService;
 
 import jakarta.validation.Valid;
 
@@ -26,14 +28,22 @@ import jakarta.validation.Valid;
 public class ClaseController {
 
     private final ClaseService service;
+    private final UsuarioActualService usuarioActual;
 
-    public ClaseController(ClaseService service) {
+    public ClaseController(ClaseService service, UsuarioActualService usuarioActual) {
         this.service = service;
+        this.usuarioActual = usuarioActual;
     }
 
     @GetMapping
     public List<ClaseResponse> listar() {
         return service.listar();
+    }
+
+    /** Portal del alumno: sus horarios de clase, sin exponer los de otros alumnos. */
+    @GetMapping("/mi")
+    public List<ClaseResponse> mi(Principal principal) {
+        return service.listarPorAlumno(usuarioActual.alumnoId(principal));
     }
 
     @GetMapping("/{id}")

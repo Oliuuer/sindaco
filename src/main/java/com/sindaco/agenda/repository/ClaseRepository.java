@@ -15,6 +15,9 @@ public interface ClaseRepository extends JpaRepository<Clase, Long> {
 
     List<Clase> findByInstructorId(Long instructorId);
 
+    /** Horarios de un alumno, de la fecha más próxima a la más lejana. */
+    List<Clase> findByAlumnoIdOrderByFechaAscHoraInicioAsc(Long alumnoId);
+
     List<Clase> findByVehiculoId(Long vehiculoId);
 
     List<Clase> findByFecha(LocalDate fecha);

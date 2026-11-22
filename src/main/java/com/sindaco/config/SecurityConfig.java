@@ -44,6 +44,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/", "/index.html", "/app.js", "/estilo.css",
                         "/favicon.ico", "/error").permitAll()
 
+                // Portal del alumno: rutas propias, antes de las reglas generales de cada módulo.
+                .requestMatchers(HttpMethod.GET, "/api/matriculas/mi", "/api/clases/mi", "/api/pagos/mi")
+                    .hasAnyRole("ALUMNO")
+
                 // CU01 · matrículas: alumno, recepcionista y administrador
                 .requestMatchers("/api/matriculas/**")
                     .hasAnyRole("ALUMNO", "RECEPCIONISTA", "ADMINISTRADOR")
@@ -79,7 +83,7 @@ public class SecurityConfig {
 
                 // Apoyo a los formularios: lectura de alumnos para roles que operan matrículas o clases.
                 .requestMatchers(HttpMethod.GET, "/api/alumnos/**")
-                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR", "ALUMNO")
+                    .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR")
                 .requestMatchers("/api/alumnos/**")
                     .hasAnyRole("ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR")
                 .requestMatchers("/api/usuarios/**")

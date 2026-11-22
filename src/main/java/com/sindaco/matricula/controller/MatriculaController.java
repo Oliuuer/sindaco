@@ -1,5 +1,6 @@
 package com.sindaco.matricula.controller;
 
+import java.security.Principal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sindaco.matricula.dto.MatriculaRequest;
 import com.sindaco.matricula.dto.MatriculaResponse;
 import com.sindaco.matricula.service.MatriculaService;
+import com.sindaco.seguridad.entity.Rol;
+import com.sindaco.seguridad.service.UsuarioActualService;
 
 import jakarta.validation.Valid;
 
@@ -26,34 +29,63 @@ import jakarta.validation.Valid;
 public class MatriculaController {
 
     private final MatriculaService service;
+    private final UsuarioActualService usuarioActual;
 
-    public MatriculaController(MatriculaService service) {
+    public MatriculaController(MatriculaService service, UsuarioActualService usuarioActual) {
         this.service = service;
+        this.usuarioActual = usuarioActual;
     }
 
+    /** Los roles operativos ven todas; el alumno únicamente las suyas. */
     @GetMapping
-    public List<MatriculaResponse> listar() {
+    public List<MatriculaResponse> listar(Principal principal) {
+        if (usuarioActual.es(principal, Rol.ALUMNO)) {
+            return service.listarPorAlumno(usuarioActual.alumnoId(principal));
+        }
         return service.listar();
     }
 
+    /** Portal del alumno: sus propias matrículas. */
+    @GetMapping("/mi")
+    public List<MatriculaResponse> mi(Principal principal) {
+        return service.listarPorAlumno(usuarioActual.alumnoId(principal));
+    }
+
     @GetMapping("/{id}")
-    public MatriculaResponse buscarPorId(@PathVariable Long id) {
-        return service.buscarPorId(id);
+    public MatriculaResponse buscarPorId(@PathVariable Long id, Principal principal) {
+        MatriculaResponse respuesta = service.buscarPorId(id);
+        usuarioActual.verificarPropio(principal, respuesta.alumnoId());
+        return respuesta;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public MatriculaResponse crear(@Valid @RequestBody MatriculaRequest request) {
+    public MatriculaResponse crear(@Valid @RequestBody MatriculaRequest request, Principal principal) {
+        if (usuarioActual.es(principal, Rol.ALUMNO)) {
+            // El alumno solo puede matricularse a sí mismo y no puede auto-confirmar la matrícula.
+            request = new MatriculaRequest(usuarioActual.alumnoId(principal), request.paqueteId(),
+                    null, request.fecha(), request.codigoPromocion());
+        }
         return service.crear(request);
     }
 
     @PutMapping("/{id}")
-    public MatriculaResponse actualizar(@PathVariable Long id, @Valid @RequestBody MatriculaRequest request) {
+    public MatriculaResponse actualizar(@PathVariable Long id,
+                                        @Valid @RequestBody MatriculaRequest request,
+                                        Principal principal) {
+        MatriculaResponse actual = service.buscarPorId(id);
+        usuarioActual.verificarPropio(principal, actual.alumnoId());
+        if (usuarioActual.es(principal, Rol.ALUMNO)) {
+            request = new MatriculaRequest(actual.alumnoId(), request.paqueteId(),
+                    actual.estado(), request.fecha(), request.codigoPromocion());
+        }
         return service.actualizar(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(@PathVariable Long id, Principal principal) {
+        MatriculaResponse actual = service.buscarPorId(id);
+        usuarioActual.verificarPropio(principal, actual.alumnoId());
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }

@@ -22,5 +22,8 @@ public interface PagoService {
 
     List<PagoResponse> listarPorMatricula(Long matriculaId);
 
+    /** Pagos realizados por un alumno; lo usa el portal del alumno (CU02). */
+    List<PagoResponse> listarPorAlumno(Long alumnoId);
+
     List<PagoResponse> listarPorFecha(LocalDate desde, LocalDate hasta);
 }

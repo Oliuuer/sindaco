@@ -18,6 +18,14 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     @Query("SELECT p FROM Pago p WHERE p.matriculaId = :matriculaId ORDER BY p.fecha DESC, p.id DESC")
     List<Pago> findByMatriculaId(@Param("matriculaId") Long matriculaId);
 
+    /** Pagos de las matrículas de un alumno; lo usa el portal del alumno (CU02). */
+    @Query("""
+            SELECT p FROM Pago p
+            WHERE p.matriculaId IN (SELECT m.id FROM Matricula m WHERE m.alumnoId = :alumnoId)
+            ORDER BY p.fecha DESC, p.id DESC
+            """)
+    List<Pago> findByAlumnoId(@Param("alumnoId") Long alumnoId);
+
     /** Consulta JPQL: pagos en un rango de fechas, usada por el módulo de reportes. */
     @Query("SELECT p FROM Pago p WHERE p.fecha BETWEEN :desde AND :hasta ORDER BY p.fecha ASC, p.id ASC")
     List<Pago> findByFechaBetween(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);

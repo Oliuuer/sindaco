@@ -2,7 +2,7 @@
 
 Sistema integral para gestionar **matrículas, pagos, comprobantes, promociones, clases, instructores, vehículos, asistencia, evaluaciones, mantenimiento, ausencias/reprogramaciones, notificaciones, reportes de ingresos e historial** de una escuela de manejo.
 
-> **Estado: backend y frontend completos.** API REST con arquitectura N capas, autenticación JWT con 6 roles, PostgreSQL y frontend responsive conectado a la API (sin datos simulados). Reglas de negocio de los 10 casos de uso implementadas y verificadas con pruebas automáticas.
+> **Estado: backend y frontend completos.** API REST con arquitectura N capas, autenticación JWT con 6 roles, PostgreSQL y frontend responsive conectado a la API (sin datos simulados). Reglas de negocio de los 10 casos de uso implementadas y verificadas con pruebas automáticas. El rol `ALUMNO` cuenta con un portal propio: mis matrículas, mis clases/horarios y mis pagos realizados.
 
 ## 1. Tecnologías
 
@@ -52,7 +52,7 @@ Sistema integral para gestionar **matrículas, pagos, comprobantes, promociones,
 | instructor@sindaco.com | Instructor |
 | alumno@sindaco.com | Alumno |
 
-El menú de navegación y la API aplican la misma matriz de permisos por rol. El usuario alumno queda vinculado a un alumno de ejemplo para que `/api/historial/mi` devuelva solo su historial.
+El menú de navegación y la API aplican la misma matriz de permisos por rol. El usuario alumno queda vinculado a un alumno de ejemplo; con esa cuenta verá solo **Mis matrículas**, **Mis clases**, **Mis pagos**, **Historial** y **Notificaciones**. El `alumnoId` se toma del token, nunca del formulario, y las rutas `/api/matriculas/mi`, `/api/clases/mi` y `/api/pagos/mi` solo aceptan `ALUMNO`.
 
 Al arrancar por primera vez, `DataSeeder` crea usuarios y datos de ejemplo (paquetes, promociones, alumnos, matrículas, pagos, instructores, vehículos, clases, asistencias, mantenimientos y ausencias). Si ya existen datos, no los duplica.
 
@@ -114,7 +114,8 @@ sindaco/
 | Módulo | Caso de uso | Endpoint principal | Reglas incluidas |
 |---|---|---|---|
 | seguridad | Inicio de sesión y roles · JWT | `/api/auth/login`, `/api/auth/me` | 6 roles, matriz de permisos |
-| matricula | CU01 Registrar Matrícula | `/api/matriculas` | Promoción vigente, precio final, notificación |
+| portal alumno | Mis matrículas, clases y pagos | `/api/matriculas/mi`, `/api/clases/mi`, `/api/pagos/mi` | Datos acotados al `alumnoId` del token; dashboard personal |
+| matricula | CU01 Registrar Matrícula | `/api/matriculas` | Promoción vigente, precio final, notificación; el alumno se matricula solo a sí mismo |
 | matricula | CU02 Registrar Pago y Comprobante | `/api/pagos` | Saldo, pagos fraccionados, estado de matrícula, notificación |
 | matricula | CU08 Paquetes y promociones | `/api/paquetes`, `/api/promociones` | Vigencia, descuento por porcentaje |
 | agenda | CU03 Programar Clases | `/api/clases` | Solapamientos, instructor disponible, vehículo operativo |
@@ -132,30 +133,35 @@ El detalle de todos los endpoints, cuerpos y respuestas está en [`docs/CONTRATO
 
 | Caso de uso | Roles |
 |---|---|
-| CU01 Matrículas | Alumno, Recepcionista, Administrador |
-| CU02 Pagos | Administrador |
-| CU03 Clases | Administrador, Instructor |
+| Portal del alumno (`/api/*/mi`) | Solo Alumno |
+| CU01 Matrículas | Alumno (solo las suyas), Recepcionista, Administrador |
+| CU02 Pagos | Administrador; el alumno solo consulta `/api/pagos/mi` |
+| CU03 Clases | Administrador, Instructor; el alumno solo consulta `/api/clases/mi` |
 | CU04 Instructores y vehículos | Administrador, Instructor, Encargado de Flota |
 | CU05 Asistencia | Administrador, Instructor |
 | CU06 Reportes | Administrador, Propietario |
 | CU07 Mantenimiento | Administrador, Instructor, Encargado de Flota |
-| CU08 Paquetes y promociones | Administrador, Recepcionista, Propietario |
-| CU09 Reprogramaciones | Administrador, Alumno |
-| CU10 Historial | Administrador, Alumno |
+| CU08 Paquetes y promociones | Administrador, Recepcionista, Propietario; el alumno puede consultarlos para matricularse |
+| CU09 Reprogramaciones | Administrador (el alumno ya no ve esta sección global en el frontend) |
+| CU10 Historial | Administrador, Alumno (`/api/historial/mi`) |
 
 ## 7. Frontend
 
-Aplicación de una página responsive con **15 secciones**: Dashboard, Alumnos, Matrículas, Pagos, Paquetes, Promociones, Clases, Vehículos, Instructores, Asistencia, Mantenimiento, Ausencias, Notificaciones, Reportes e Historial.
+Aplicación de una página responsive con **18 secciones**. Las secciones de gestión son Dashboard, Alumnos, Matrículas, Pagos, Paquetes, Promociones, Clases, Vehículos, Instructores, Asistencia, Mantenimiento, Ausencias, Notificaciones, Reportes e Historial; el portal del alumno añade **Mis matrículas**, **Mis clases y horarios** y **Mis pagos realizados**.
 
 - **Sin datos simulados**: todas las operaciones usan `fetch` contra la API REST.
-- **Autenticación**: guarda el JWT en `localStorage` y lo envía en cada petición.
-- **Roles**: oculta secciones no permitidas y la API valida los permisos.
-- **CRUD completo** en todas las secciones, con formularios reutilizables, confirmación al eliminar y notificaciones.
+- **Autenticación**: guarda el JWT en `localStorage` y lo envía en cada petición; al iniciar sesión se consume `/api/auth/me` para obtener el `alumnoId`.
+- **Roles**: oculta secciones no permitidas y la API valida los permisos. El alumno ya no ve «Alumnos», «Matrículas», «Pagos», «Clases», «Ausencias» ni el dashboard global.
+- **Portal del alumno**: su dashboard muestra sus propias matrículas, próximas clases, pagos, total pagado y saldo pendiente; solo llama a `/api/matriculas/mi`, `/api/clases/mi` y `/api/pagos/mi`.
+- **Mis matrículas**: permite matricularse en un paquete vigente (y cancelar sus propias matrículas); la API fuerza su `alumnoId` y el estado `POR_PAGAR`.
+- **Mis clases**: consulta sus horarios (fecha, hora de inicio/fin, instructor, vehículo y estado) sin exponer los del resto de alumnos.
+- **Mis pagos**: consulta la fecha de cada pago realizado, paquete, monto, tipo, saldo pendiente, método y comprobante.
+- **CRUD completo** en las secciones de gestión, con formularios reutilizables, confirmación al eliminar y notificaciones. Las vistas del portal son de solo lectura salvo la matrícula/cancelación propia.
 - **Matrículas**: selección opcional de código de promoción; muestra precio final, descuento y saldo.
 - **Pagos**: muestra tipo (`TOTAL`/`FRACCIONADO`) y saldo pendiente; admite pagos parciales.
 - **Reportes**: filtro de fechas y descarga CSV.
 - **Historial**: el alumno consulta `/api/historial/mi`; los demás roles eligen el alumno.
-- **Comprobantes de pago** consultables desde el listado de pagos.
+- **Comprobantes de pago** consultables desde el listado de pagos de administración.
 
 ## 8. Pruebas
 

@@ -58,6 +58,15 @@ public class ClaseServiceImpl implements ClaseService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ClaseResponse> listarPorAlumno(Long alumnoId) {
+        alumnoService.buscarPorId(alumnoId);
+        return repository.findByAlumnoIdOrderByFechaAscHoraInicioAsc(alumnoId).stream()
+                .map(this::mapear)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ClaseResponse buscarPorId(Long id) {
         return mapear(buscarEntidad(id));
     }
