@@ -1,58 +1,34 @@
 package com.sindaco.agenda.dto;
 
-public class ClaseRequest {
-    private Long instructorId;
-    private Long alumnoId;
-    private String fecha;
-    private String horaInicio;
-    private String horaFin;
-    private String estado;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
-    public Long getInstructorId() {
-        return instructorId;
-    }
+/**
+ * Datos de entrada para programar o actualizar una clase (CU03).
+ * Las fechas y horas llegan como texto ISO y se convierten en el servicio.
+ */
+public record ClaseRequest(
 
-    public void setInstructorId(Long instructorId) {
-        this.instructorId = instructorId;
-    }
+        @NotBlank(message = "El nombre es obligatorio")
+        String nombre,
 
-    public Long getAlumnoId() {
-        return alumnoId;
-    }
+        @NotBlank(message = "La fecha es obligatoria")
+        String fecha,
 
-    public void setAlumnoId(Long alumnoId) {
-        this.alumnoId = alumnoId;
-    }
+        @NotBlank(message = "La hora de inicio es obligatoria")
+        String horaInicio,
 
-    public String getFecha() {
-        return fecha;
-    }
+        @NotBlank(message = "La hora de fin es obligatoria")
+        String horaFin,
 
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
-    }
+        @NotNull(message = "El alumno es obligatorio")
+        Long alumnoId,
 
-    public String getHoraInicio() {
-        return horaInicio;
-    }
+        @NotNull(message = "El instructor es obligatorio")
+        Long instructorId,
 
-    public void setHoraInicio(String horaInicio) {
-        this.horaInicio = horaInicio;
-    }
+        @NotNull(message = "El vehículo es obligatorio")
+        Long vehiculoId,
 
-    public String getHoraFin() {
-        return horaFin;
-    }
-
-    public void setHoraFin(String horaFin) {
-        this.horaFin = horaFin;
-    }
-
-    public String getEstado() {
-        return estado;
-    }
-
-    public void setEstado(String estado) {
-        this.estado = estado;
-    }
+        String estado) {
 }

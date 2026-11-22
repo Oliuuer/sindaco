@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin:0; background:#ffffff; font-family:"Segoe UI",Arial,sans-serif; }
+  svg text { font-family:"Segoe UI",Arial,sans-serif; }
+  .titulo { font-size:17px; font-weight:600; fill:#1f2937; }
+  .cls { fill:#f8fafc; stroke:#1e3a5f; stroke-width:2; }
+  .cab { fill:#dbeafe; stroke:#1e3a5f; stroke-width:2; }
+  .stereo { font-size:12px; fill:#475569; }
+  .nombre { font-size:15px; font-weight:700; fill:#0f172a; }
+  .attr { font-size:12.5px; fill:#334155; }
+  .rel { stroke:#475569; stroke-width:1.8; fill:none; }
+  .dep { stroke:#64748b; stroke-width:1.6; fill:none; stroke-dasharray:6 4; }
+  .etq { font-size:12px; fill:#1d4ed8; }
+</style>
+</head>
+<body>
+<svg width="1000" height="560" viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <marker id="tri" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#ffffff" stroke="#475569" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <text x="30" y="30" class="titulo">Figura 74. Diagrama UML del patrón DAO (conexión real a PostgreSQL)</text>
+
+  <!-- DTO -->
+  <g>
+    <rect x="30" y="120" width="210" height="160" rx="3" class="cls"/>
+    <rect x="30" y="120" width="210" height="34" rx="3" class="cab"/>
+    <text x="135" y="143" text-anchor="middle" class="nombre">AlumnoDto</text>
+    <line x1="30" y1="154" x2="240" y2="154" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="45" y="178" class="attr">+ id : Long</text>
+    <text x="45" y="198" class="attr">+ nombre : String</text>
+    <text x="45" y="218" class="attr">+ apellidos : String</text>
+    <text x="45" y="238" class="attr">+ dni : String</text>
+    <text x="45" y="262" class="stereo">«DTO»</text>
+  </g>
+
+  <!-- DAO (interfaz) -->
+  <g>
+    <rect x="320" y="100" width="250" height="200" rx="3" class="cls"/>
+    <rect x="320" y="100" width="250" height="34" rx="3" class="cab"/>
+    <text x="445" y="123" text-anchor="middle" class="nombre">AlumnoDao</text>
+    <text x="445" y="140" text-anchor="middle" class="stereo">«interface»</text>
+    <line x1="320" y1="148" x2="570" y2="148" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="335" y="172" class="attr">+ listar() : List&lt;AlumnoDto&gt;</text>
+    <text x="335" y="196" class="attr">+ buscarPorId(id) : Optional&lt;AlumnoDto&gt;</text>
+    <text x="335" y="220" class="attr">+ guardar(alumno) : int</text>
+    <text x="335" y="270" class="stereo">«DataAccessObject»</text>
+  </g>
+
+  <!-- DAO IMPL -->
+  <g>
+    <rect x="320" y="360" width="250" height="130" rx="3" class="cls"/>
+    <rect x="320" y="360" width="250" height="34" rx="3" class="cab"/>
+    <text x="445" y="383" text-anchor="middle" class="nombre">AlumnoDaoImpl</text>
+    <line x1="320" y1="394" x2="570" y2="394" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="335" y="418" class="attr">- URL, USER, PASSWORD</text>
+    <text x="335" y="440" class="attr">- conectar() : Connection</text>
+    <text x="335" y="470" class="stereo">«JDBC sobre PostgreSQL»</text>
+  </g>
+
+  <!-- CLIENTE -->
+  <g>
+    <rect x="650" y="120" width="230" height="160" rx="3" class="cls"/>
+    <rect x="650" y="120" width="230" height="34" rx="3" class="cab"/>
+    <text x="765" y="143" text-anchor="middle" class="nombre">AlumnoDaoClient</text>
+    <line x1="650" y1="154" x2="880" y2="154" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="665" y="178" class="attr">- dao : AlumnoDao</text>
+    <line x1="650" y1="190" x2="880" y2="190" stroke="#1e3a5f" stroke-width="1.2"/>
+    <text x="665" y="212" class="attr">+ ejecutar() : void</text>
+    <text x="665" y="234" class="attr">+ main(args) : void</text>
+    <text x="665" y="262" class="stereo">«Cliente»</text>
+  </g>
+
+  <!-- BASE DE DATOS -->
+  <g>
+    <rect x="650" y="380" width="230" height="90" rx="3" class="cls"/>
+    <rect x="650" y="380" width="230" height="34" rx="3" class="cab"/>
+    <text x="765" y="403" text-anchor="middle" class="nombre">PostgreSQL</text>
+    <line x1="650" y1="414" x2="880" y2="414" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="665" y="438" class="attr">tabla: alumnos</text>
+    <text x="665" y="458" class="stereo">«Base de datos real»</text>
+  </g>
+
+  <!-- Relaciones -->
+  <path d="M 650 190 L 570 190" class="rel" marker-end="url(#arrow)"/>
+  <text x="580" y="180" class="etq">usa</text>
+
+  <path d="M 445 360 L 445 300" class="dep" marker-end="url(#tri)"/>
+  <text x="460" y="335" class="etq">implementa</text>
+
+  <path d="M 320 190 L 240 190" class="dep" marker-end="url(#arrowD)"/>
+  <text x="248" y="180" class="etq">devuelve DTOs</text>
+
+  <path d="M 320 420 C 275 420 275 250 240 250" class="dep" marker-end="url(#arrowD)"/>
+  <text x="258" y="330" class="etq">construye DTOs</text>
+
+  <path d="M 570 425 L 650 425" class="rel" marker-end="url(#arrow)"/>
+  <text x="580" y="415" class="etq">JDBC / SQL</text>
+</svg>
+</body>
+</html>

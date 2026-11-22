@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** Paquete de clases que se vende en una matrícula (CU08). Provisional hasta alinear con el modelo físico 3.6. */
+/** Paquete de clases que se vende en una matrícula (CU08). */
 @Entity
 @Table(name = "paquetes_promociones")
 public class Paquete {
@@ -33,7 +33,11 @@ public class Paquete {
     @Column(nullable = false)
     private boolean vigente = true;
 
+    public Paquete() {
+    }
+
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
     public String getCategoria() { return categoria; }

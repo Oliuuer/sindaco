@@ -1,9 +1,19 @@
 package com.sindaco.agenda.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.sindaco.agenda.enums.EstadoClase;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+/** Clase programada en la agenda (CU03). Las relaciones se guardan como identificadores. */
 @Entity
 @Table(name = "clases")
 public class Clase {
@@ -12,30 +22,40 @@ public class Clase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
+    private String nombre;
+
+    @Column(name = "alumno_id", nullable = false)
+    private Long alumnoId;
+
+    @Column(name = "instructor_id", nullable = false)
     private Long instructorId;
 
-    @Column(nullable = false)
-    private Long alumnoId;
+    @Column(name = "vehiculo_id", nullable = false)
+    private Long vehiculoId;
 
     @Column(nullable = false)
     private LocalDate fecha;
 
-    @Column(nullable = false)
+    @Column(name = "hora_inicio", nullable = false)
     private LocalTime horaInicio;
 
-    @Column(nullable = false)
+    @Column(name = "hora_fin", nullable = false)
     private LocalTime horaFin;
 
-    @Column(nullable = false)
-    private String estado = "PROGRAMADA";
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EstadoClase estado = EstadoClase.PROGRAMADA;
 
     public Clase() {
     }
 
-    public Clase(Long instructorId, Long alumnoId, LocalDate fecha, LocalTime horaInicio, LocalTime horaFin, String estado) {
-        this.instructorId = instructorId;
+    public Clase(String nombre, Long alumnoId, Long instructorId, Long vehiculoId, LocalDate fecha,
+                 LocalTime horaInicio, LocalTime horaFin, EstadoClase estado) {
+        this.nombre = nombre;
         this.alumnoId = alumnoId;
+        this.instructorId = instructorId;
+        this.vehiculoId = vehiculoId;
         this.fecha = fecha;
         this.horaInicio = horaInicio;
         this.horaFin = horaFin;
@@ -50,12 +70,12 @@ public class Clase {
         this.id = id;
     }
 
-    public Long getInstructorId() {
-        return instructorId;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setInstructorId(Long instructorId) {
-        this.instructorId = instructorId;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     public Long getAlumnoId() {
@@ -64,6 +84,22 @@ public class Clase {
 
     public void setAlumnoId(Long alumnoId) {
         this.alumnoId = alumnoId;
+    }
+
+    public Long getInstructorId() {
+        return instructorId;
+    }
+
+    public void setInstructorId(Long instructorId) {
+        this.instructorId = instructorId;
+    }
+
+    public Long getVehiculoId() {
+        return vehiculoId;
+    }
+
+    public void setVehiculoId(Long vehiculoId) {
+        this.vehiculoId = vehiculoId;
     }
 
     public LocalDate getFecha() {
@@ -90,11 +126,11 @@ public class Clase {
         this.horaFin = horaFin;
     }
 
-    public String getEstado() {
+    public EstadoClase getEstado() {
         return estado;
     }
 
-    public void setEstado(String estado) {
+    public void setEstado(EstadoClase estado) {
         this.estado = estado;
     }
 }

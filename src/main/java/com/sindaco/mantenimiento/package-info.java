@@ -1,4 +1,5 @@
 /**
- * Módulo MANTENIMIENTO: CU07 Gestionar Mantenimiento de Vehículos. Entidades previstas: Mantenimiento.
+ * Modulo MANTENIMIENTO: CU07 Gestionar Mantenimiento de Vehiculos.
+ * Entidad: Mantenimiento.
  */
 package com.sindaco.mantenimiento;

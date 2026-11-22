@@ -5,10 +5,12 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/** Traduce cualquier excepción al formato único ApiError que consume el frontend. */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -23,6 +25,21 @@ public class GlobalExceptionHandler {
                 .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .toList();
         return construir(HttpStatus.BAD_REQUEST, "Datos inválidos", detalles);
+    }
+
+    @ExceptionHandler({ ReglaNegocioException.class, IllegalArgumentException.class })
+    public ResponseEntity<ApiError> reglaNegocio(RuntimeException ex) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(ConflictoException.class)
+    public ResponseEntity<ApiError> conflicto(ConflictoException ex) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> cuerpoInvalido(HttpMessageNotReadableException ex) {
+        return construir(HttpStatus.BAD_REQUEST, "Cuerpo de la petición inválido", List.of());
     }
 
     @ExceptionHandler(Exception.class)

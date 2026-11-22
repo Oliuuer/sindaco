@@ -1,9 +1,19 @@
 package com.sindaco.matricula.entity;
 
-import com.sindaco.matricula.enums.EstadoMatricula;
-import jakarta.persistence.*;
 import java.time.LocalDate;
 
+import com.sindaco.matricula.enums.EstadoMatricula;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+/** Matrícula de un alumno en un paquete de clases (CU01). */
 @Entity
 @Table(name = "matriculas")
 public class Matricula {
@@ -12,11 +22,11 @@ public class Matricula {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "alumno_id", nullable = false)
     private Long alumnoId;
 
-    @Column(nullable = false)
-    private String paquete;
+    @Column(name = "paquete_id", nullable = false)
+    private Long paqueteId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -28,9 +38,9 @@ public class Matricula {
     public Matricula() {
     }
 
-    public Matricula(Long alumnoId, String paquete, EstadoMatricula estado, LocalDate fecha) {
+    public Matricula(Long alumnoId, Long paqueteId, EstadoMatricula estado, LocalDate fecha) {
         this.alumnoId = alumnoId;
-        this.paquete = paquete;
+        this.paqueteId = paqueteId;
         this.estado = estado;
         this.fecha = fecha;
     }
@@ -51,12 +61,12 @@ public class Matricula {
         this.alumnoId = alumnoId;
     }
 
-    public String getPaquete() {
-        return paquete;
+    public Long getPaqueteId() {
+        return paqueteId;
     }
 
-    public void setPaquete(String paquete) {
-        this.paquete = paquete;
+    public void setPaqueteId(Long paqueteId) {
+        this.paqueteId = paqueteId;
     }
 
     public EstadoMatricula getEstado() {

@@ -1,22 +1,9 @@
 package com.sindaco.seguridad.dto;
 
-public class LoginRequest {
-    private String username;
-    private String password;
+import jakarta.validation.constraints.NotBlank;
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+public record LoginRequest(
+        @NotBlank(message = "El usuario es obligatorio") String username,
+        @NotBlank(message = "La contraseña es obligatoria") String password,
+        String rol) {
 }

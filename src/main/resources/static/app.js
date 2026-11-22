@@ -1,317 +1,313 @@
-const STORAGE_KEY = "sindaco_state_v1";
+/* SINDACO - Frontend conectado a la API REST (arquitectura N capas: esta es la capa de presentación). */
+const API = "/api";
+const TOKEN_KEY = "sindaco_token";
+const USER_KEY = "sindaco_user";
 
-const defaultState = {
-  users: [
-    { id: 1, nombre: "Juan Pérez", email: "propietario@sindaco.com", password: "pass123", rol: "propietario" },
-    { id: 2, nombre: "María García", email: "admin@sindaco.com", password: "pass123", rol: "administrador" },
-    { id: 3, nombre: "Ana Ramos", email: "recepcionista@sindaco.com", password: "pass123", rol: "recepcionista" },
-    { id: 4, nombre: "Luis Vega", email: "encargado@sindaco.com", password: "pass123", rol: "encargado_flotas" },
-    { id: 5, nombre: "Carlos López", email: "instructor@sindaco.com", password: "pass123", rol: "instructor" },
-    { id: 6, nombre: "Pedro Martínez", email: "alumno@sindaco.com", password: "pass123", rol: "alumno" }
-  ],
-  paquetes: [
-    { id: 1, nombre: "A-I", categoria: "A-I", numero_clases: 10, precio: 450.00, vigente: true },
-    { id: 2, nombre: "A-IIa", categoria: "A-IIa", numero_clases: 15, precio: 620.00, vigente: true },
-    { id: 3, nombre: "A-IIb", categoria: "A-IIb", numero_clases: 18, precio: 680.00, vigente: true },
-    { id: 4, nombre: "A-IIIb", categoria: "A-IIIb", numero_clases: 20, precio: 760.00, vigente: true }
-  ],
-  alumnos: [
-    { id: 1, nombre: "Ana", apellidos: "Torres", dni: "12345678", email: "ana@correo.com", telefono: "999111222", direccion: "Av. Central 123", fecha_registro: "2026-09-12" },
-    { id: 2, nombre: "Luis", apellidos: "Ramírez", dni: "98765432", email: "luis@correo.com", telefono: "998877665", direccion: "Jr. Las Flores 45", fecha_registro: "2026-09-13" },
-    { id: 3, nombre: "Carlos", apellidos: "Vega", dni: "45678912", email: "carlos@correo.com", telefono: "955441233", direccion: "Calle Lima 88", fecha_registro: "2026-09-15" }
-  ],
-  matriculas: [
-    { id: 1, alumnoId: 1, paqueteId: 2, fecha: "2026-09-12", estado: "confirmada" },
-    { id: 2, alumnoId: 2, paqueteId: 3, fecha: "2026-09-13", estado: "por_pagar" },
-    { id: 3, alumnoId: 3, paqueteId: 1, fecha: "2026-09-15", estado: "confirmada" }
-  ],
-  pagos: [
-    { id: 1, matriculaId: 1, monto: 620, metodo: "yape", comprobante: "Y-001", fecha: "2026-09-12" },
-    { id: 2, matriculaId: 2, monto: 680, metodo: "transferencia", comprobante: "TR-102", fecha: "2026-09-13" }
-  ],
-  instructores: [
-    { id: 1, nombre: "Carlos López", especialidad: "Manual", telefono: "999555111", disponible: true },
-    { id: 2, nombre: "Renzo Castro", especialidad: "Automático", telefono: "980123456", disponible: true }
-  ],
-  vehiculos: [
-    { id: 1, placa: "ABC-123", marca: "Toyota", modelo: "Corolla", estado: "operativo" },
-    { id: 2, placa: "XYZ-456", marca: "Honda", modelo: "Civic", estado: "en_taller" },
-    { id: 3, placa: "QWE-789", marca: "Hyundai", modelo: "Accent", estado: "operativo" }
-  ],
-  clases: [
-    { id: 1, nombre: "Clase práctica 01", fecha: "2026-09-20", horaInicio: "08:00", horaFin: "09:30", instructorId: 1, vehiculoId: 1, estado: "programada" },
-    { id: 2, nombre: "Clase práctica 02", fecha: "2026-09-20", horaInicio: "10:00", horaFin: "11:30", instructorId: 2, vehiculoId: 2, estado: "confirmada" },
-    { id: 3, nombre: "Clase práctica 03", fecha: "2026-09-21", horaInicio: "15:00", horaFin: "16:30", instructorId: 1, vehiculoId: 3, estado: "programada" }
-  ],
-  asistencias: [
-    { id: 1, claseId: 1, asistio: true, calificacion: 17, observaciones: "Muy buen desempeño" },
-    { id: 2, claseId: 2, asistio: false, calificacion: 0, observaciones: "Falta justificada" }
-  ],
-  mantenimientos: [
-    { id: 1, vehiculoId: 2, tipo: "Preventivo", descripcion: "Cambio de aceite y revisión general", fecha: "2026-09-16", estado: "en_proceso", proveedor: "Taller AutoMax" },
-    { id: 2, vehiculoId: 1, tipo: "Correctivo", descripcion: "Ajuste de frenos", fecha: "2026-09-18", estado: "completado", proveedor: "Mecánica Central" }
-  ],
-  ausencias: [
-    { id: 1, alumnoId: 2, claseId: 2, motivo: "Emergencia familiar", fecha: "2026-09-20", estado: "pendiente_reprogramacion" },
-    { id: 2, alumnoId: 1, claseId: 1, motivo: "No pudo asistir", fecha: "2026-09-21", estado: "reprogramada" }
-  ]
+const TITULOS = {
+  dashboard: "Dashboard",
+  alumnos: "Alumnos",
+  matriculas: "Matrículas",
+  pagos: "Pagos",
+  paquetes: "Paquetes",
+  clases: "Clases",
+  vehiculos: "Vehículos",
+  instructores: "Instructores",
+  asistencia: "Asistencia",
+  mantenimiento: "Mantenimiento",
+  ausencias: "Ausencias y reprogramaciones",
+  reportes: "Reportes",
+  historial: "Historial"
 };
 
-let appState = loadState();
+const PERMISOS = {
+  dashboard: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"],
+  alumnos: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
+  matriculas: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
+  pagos: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
+  paquetes: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
+  clases: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "ENCARGADO_FLOTAS", "INSTRUCTOR", "ALUMNO"],
+  vehiculos: ["PROPIETARIO", "ADMINISTRADOR", "ENCARGADO_FLOTAS"],
+  instructores: ["PROPIETARIO", "ADMINISTRADOR", "ENCARGADO_FLOTAS", "INSTRUCTOR"],
+  asistencia: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
+  mantenimiento: ["PROPIETARIO", "ADMINISTRADOR", "ENCARGADO_FLOTAS"],
+  ausencias: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA", "INSTRUCTOR"],
+  reportes: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"],
+  historial: ["PROPIETARIO", "ADMINISTRADOR", "RECEPCIONISTA"]
+};
+
+const ROLES_LOGIN = {
+  propietario: "PROPIETARIO",
+  administrador: "ADMINISTRADOR",
+  recepcionista: "RECEPCIONISTA",
+  encargado_flotas: "ENCARGADO_FLOTAS",
+  instructor: "INSTRUCTOR",
+  alumno: "ALUMNO"
+};
+
+const ENTIDADES = {
+  alumnos: { endpoint: "/alumnos", form: "alumnoForm", render: renderAlumnos },
+  matriculas: { endpoint: "/matriculas", form: "matriculaForm", render: renderMatriculas },
+  pagos: { endpoint: "/pagos", form: "pagoForm", render: renderPagos },
+  paquetes: { endpoint: "/paquetes", form: "paqueteForm", render: renderPaquetes },
+  clases: { endpoint: "/clases", form: "claseForm", render: renderClases },
+  vehiculos: { endpoint: "/vehiculos", form: "vehiculoForm", render: renderVehiculos },
+  instructores: { endpoint: "/instructores", form: "instructorForm", render: renderInstructores },
+  asistencias: { endpoint: "/asistencias", form: "asistenciaForm", render: renderAsistencia },
+  mantenimientos: { endpoint: "/mantenimientos", form: "mantenimientoForm", render: renderMantenimiento },
+  reprogramaciones: { endpoint: "/reprogramaciones", form: "ausenciaForm", render: renderAusencias }
+};
 
 const state = {
   currentSection: "dashboard",
-  currentUser: null
+  currentUser: null,
+  token: localStorage.getItem(TOKEN_KEY),
+  filtros: { desde: "", hasta: "" }
 };
 
-function loadState() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultState));
-    return structuredClone(defaultState);
+/* ---------- Utilidades ---------- */
+function esc(valor) {
+  return String(valor ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[c]);
+}
+
+function hoy() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function dinero(valor) {
+  return `S/ ${Number(valor || 0).toFixed(2)}`;
+}
+
+function etiqueta(valor) {
+  return String(valor ?? "-").replaceAll("_", " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function estadoHtml(valor) {
+  return `<span class="status ${String(valor ?? "").toLowerCase()}">${esc(etiqueta(valor))}</span>`;
+}
+
+function datosFormulario(form) {
+  return Object.fromEntries(new FormData(form).entries());
+}
+
+function notificar(mensaje, tipo = "success") {
+  const root = document.getElementById("toastRoot");
+  if (!root) return;
+  const toast = document.createElement("div");
+  toast.className = `toast ${tipo}`;
+  toast.textContent = mensaje;
+  root.appendChild(toast);
+  setTimeout(() => toast.remove(), 4500);
+}
+
+function mostrarModal(titulo, contenido) {
+  const root = document.getElementById("modalRoot");
+  root.innerHTML = `
+    <div class="modal-backdrop" data-action="cerrar-modal">
+      <div class="modal-card" role="dialog" aria-modal="true">
+        <div class="table-header"><h3>${esc(titulo)}</h3>
+          <button class="mini-btn" data-action="cerrar-modal">Cerrar</button></div>
+        ${contenido}
+      </div>
+    </div>`;
+}
+
+/* ---------- Cliente HTTP (capa de acceso a la API) ---------- */
+async function api(path, opciones = {}) {
+  const headers = { Accept: "application/json" };
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  if (opciones.body !== undefined) headers["Content-Type"] = "application/json";
+
+  const respuesta = await fetch(API + path, {
+    method: opciones.method || "GET",
+    headers,
+    body: opciones.body !== undefined ? JSON.stringify(opciones.body) : undefined
+  });
+
+  let datos = null;
+  const texto = await respuesta.text();
+  if (texto) {
+    try { datos = JSON.parse(texto); } catch { datos = texto; }
   }
-  try {
-    return JSON.parse(stored);
-  } catch (err) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultState));
-    return structuredClone(defaultState);
+
+  if (!respuesta.ok) {
+    if (respuesta.status === 401 && state.token) {
+      cerrarSesion(true);
+      notificar("Su sesión expiró. Inicie sesión nuevamente.", "error");
+    }
+    const mensaje = datos && datos.mensaje ? datos.mensaje : `Error ${respuesta.status}`;
+    const detalles = datos && datos.detalles && datos.detalles.length ? ` (${datos.detalles.join("; ")})` : "";
+    throw new Error(mensaje + detalles);
   }
+  return datos;
 }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-}
-
-function getCurrentUser() {
-  return state.currentUser;
-}
-
-function loginUser(email, password, rol) {
-  const user = appState.users.find(u => u.email === email && u.password === password && u.rol === rol);
-  if (!user) return null;
-  state.currentUser = user;
-  return user;
-}
-
-function logoutUser() {
+/* ---------- Autenticación ---------- */
+function cerrarSesion(silent = false) {
+  state.token = null;
   state.currentUser = null;
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
   document.getElementById("loginView").classList.remove("hidden");
   document.getElementById("appView").classList.add("hidden");
   document.getElementById("loginForm").reset();
   const msg = document.getElementById("loginMessage");
   msg.textContent = "";
   msg.className = "login-message";
+  if (!silent) notificar("Sesión cerrada correctamente");
 }
 
-function validateLogin(email, password, rol) {
-  if (!email || !password || !rol) return "Completa todos los campos.";
-  return "";
-}
-
-function setSection(section) {
-  state.currentSection = section;
+function mostrarApp() {
+  document.getElementById("loginView").classList.add("hidden");
+  document.getElementById("appView").classList.remove("hidden");
+  aplicarPermisos();
+  renderHeader();
   renderSection();
 }
 
+function aplicarPermisos() {
+  const rol = state.currentUser?.rol;
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    const permitido = (PERMISOS[btn.dataset.section] || []).includes(rol);
+    btn.classList.toggle("hidden", !permitido);
+  });
+}
+
 function renderHeader() {
-  const userBadge = document.getElementById("userBadge");
-  const title = document.getElementById("pageTitle");
-
   if (!state.currentUser) return;
+  document.getElementById("userBadge").textContent =
+    `${state.currentUser.nombre} (${etiqueta(state.currentUser.rol)})`;
+  document.getElementById("pageTitle").textContent = TITULOS[state.currentSection] || "Dashboard";
+}
 
-  userBadge.textContent = `${state.currentUser.nombre} (${state.currentUser.rol})`;
-  const map = {
-    dashboard: "Dashboard",
-    alumnos: "Alumnos",
-    matriculas: "Matrículas",
-    pagos: "Pagos",
-    paquetes: "Paquetes",
-    clases: "Clases",
-    vehiculos: "Vehículos",
-    instructores: "Instructores",
-    asistencia: "Asistencia",
-    mantenimiento: "Mantenimiento",
-    ausencias: "Ausencias",
-    reportes: "Reportes",
-    historial: "Historial"
+function setSection(seccion) {
+  if (!(PERMISOS[seccion] || []).includes(state.currentUser?.rol)) {
+    notificar("No tiene permiso para acceder a esa sección", "error");
+    return;
+  }
+  state.currentSection = seccion;
+  document.querySelectorAll(".nav-item").forEach(btn =>
+    btn.classList.toggle("active", btn.dataset.section === seccion));
+  renderHeader();
+  renderSection();
+}
+
+/* ---------- Render genérico ---------- */
+function contenedor() {
+  return document.getElementById("viewContent");
+}
+
+function cargando() {
+  contenedor().innerHTML = `<div class="loading-state"><span class="spinner"></span> Cargando información...</div>`;
+}
+
+async function renderSection() {
+  if (!state.currentUser) return;
+  cargando();
+  try {
+    const vistas = {
+      dashboard: renderDashboard, alumnos: renderAlumnos, matriculas: renderMatriculas,
+      pagos: renderPagos, paquetes: renderPaquetes, clases: renderClases,
+      vehiculos: renderVehiculos, instructores: renderInstructores,
+      asistencia: renderAsistencia, mantenimiento: renderMantenimiento,
+      ausencias: renderAusencias, reportes: renderReportes, historial: renderHistorial
+    };
+    await (vistas[state.currentSection] || renderDashboard)();
+  } catch (error) {
+    contenedor().innerHTML = `<div class="empty-state">No se pudo cargar la información: ${esc(error.message)}</div>`;
+    notificar(error.message, "error");
+  }
+}
+
+function opciones(items, texto, valor = "id", seleccionado = "") {
+  return `<option value="">Seleccione</option>` + items.map(item =>
+    `<option value="${esc(item[valor])}" ${String(item[valor]) === String(seleccionado) ? "selected" : ""}>${esc(texto(item))}</option>`
+  ).join("");
+}
+
+function tablaVacia(columnas, mensaje) {
+  return `<tr><td colspan="${columnas}"><div class="empty-state">${esc(mensaje)}</div></td></tr>`;
+}
+
+function botonesEditarEliminar(entidad, id) {
+  return `
+    <button class="edit-btn" data-action="edit" data-entidad="${entidad}" data-id="${id}">Editar</button>
+    <button class="delete-btn" data-action="delete" data-entidad="${entidad}" data-id="${id}">Eliminar</button>`;
+}
+
+/* ---------- Dashboard ---------- */
+async function renderDashboard() {
+  const reporteVacio = { totalIngresos: 0, totalPagos: 0, promedioPago: 0, porMetodo: [], porMes: [] };
+  const [reporte, alumnos, clases, matriculas, paquetes, mantenimientos] = await Promise.all([
+    api("/reportes/ingresos").catch(() => reporteVacio),
+    api("/alumnos").catch(() => []),
+    api("/clases").catch(() => []),
+    api("/matriculas").catch(() => []),
+    api("/paquetes").catch(() => []),
+    api("/mantenimientos").catch(() => [])
+  ]);
+  const nombreAlumno = id => {
+    const a = alumnos.find(x => x.id === id);
+    return a ? `${a.nombre} ${a.apellidos}` : "Sin alumno";
   };
 
-  title.textContent = map[state.currentSection] || "Dashboard";
-}
-
-function getAlumnoById(id) {
-  return appState.alumnos.find(a => a.id === Number(id));
-}
-
-function getPaqueteById(id) {
-  return appState.paquetes.find(p => p.id === Number(id));
-}
-
-function getInstructorById(id) {
-  return appState.instructores.find(i => i.id === Number(id));
-}
-
-function getVehiculoById(id) {
-  return appState.vehiculos.find(v => v.id === Number(id));
-}
-
-function getMatriculaById(id) {
-  return appState.matriculas.find(m => m.id === Number(id));
-}
-
-function getClaseById(id) {
-  return appState.clases.find(c => c.id === Number(id));
-}
-
-function formatMoney(value) {
-  return `S/ ${Number(value || 0).toFixed(2)}`;
-}
-
-function renderDashboard() {
-  const totalAlumnos = appState.alumnos.length;
-  const totalClases = appState.clases.length;
-  const totalPagos = appState.pagos.length;
-  const totalInstructores = appState.instructores.length;
-  const totalPaquetes = appState.paquetes.length;
-  const totalMantenimientos = appState.mantenimientos.length;
-  const totalIngresos = appState.pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
-
-  const html = `
+  contenedor().innerHTML = `
     <section class="stats-grid">
-      <article class="stat-card blue">
-        <small>Alumnos</small>
-        <h3>${totalAlumnos}</h3>
-        <span>Registrados</span>
-      </article>
-
-      <article class="stat-card">
-        <small>Clases</small>
-        <h3>${totalClases}</h3>
-        <span>Programadas</span>
-      </article>
-
-      <article class="stat-card">
-        <small>Pagos</small>
-        <h3>${totalPagos}</h3>
-        <span>Registrados</span>
-      </article>
-
-      <article class="stat-card">
-        <small>Ingresos</small>
-        <h3>${formatMoney(totalIngresos)}</h3>
-        <span>Totales</span>
-      </article>
-
-      <article class="stat-card">
-        <small>Paquetes</small>
-        <h3>${totalPaquetes}</h3>
-        <span>Activos</span>
-      </article>
-
-      <article class="stat-card">
-        <small>Mantenimiento</small>
-        <h3>${totalMantenimientos}</h3>
-        <span>Registros</span>
-      </article>
+      <article class="stat-card blue"><small>Alumnos</small><h3>${alumnos.length}</h3><span>Registrados</span></article>
+      <article class="stat-card"><small>Clases</small><h3>${clases.length}</h3><span>Programadas</span></article>
+      <article class="stat-card"><small>Pagos</small><h3>${reporte.totalPagos}</h3><span>Registrados</span></article>
+      <article class="stat-card"><small>Ingresos</small><h3>${dinero(reporte.totalIngresos)}</h3><span>Totales</span></article>
+      <article class="stat-card"><small>Paquetes</small><h3>${paquetes.filter(p => p.vigente).length}</h3><span>Vigentes</span></article>
+      <article class="stat-card"><small>Mantenimiento</small><h3>${mantenimientos.length}</h3><span>Registros</span></article>
     </section>
 
     <section class="content-grid">
       <div class="panel large">
-        <div class="panel-header">
-          <h3>Resumen de matrículas</h3>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Alumno</th>
-              <th>Paquete</th>
-              <th>Estado</th>
-              <th>Fecha</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${appState.matriculas.length ? appState.matriculas.map(m => {
-              const alumno = getAlumnoById(m.alumnoId);
-              const paquete = getPaqueteById(m.paqueteId);
-              return `
-                <tr>
-                  <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
-                  <td>${paquete ? paquete.nombre : "Sin paquete"}</td>
-                  <td><span class="status ${m.estado}">${m.estado}</span></td>
-                  <td>${m.fecha}</td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="4">No hay matrículas aún.</td></tr>`}
-          </tbody>
-        </table>
+        <div class="panel-header"><h3>Resumen de matrículas</h3></div>
+        <table><thead><tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Fecha</th></tr></thead>
+          <tbody>${matriculas.length ? matriculas.map(m => `
+            <tr><td>${esc(nombreAlumno(m.alumnoId))}</td><td>${esc(m.paquete)}</td>
+            <td>${estadoHtml(m.estado)}</td><td>${esc(m.fecha)}</td></tr>`).join("")
+            : tablaVacia(4, "No hay matrículas aún.")}</tbody></table>
       </div>
-
       <div class="panel">
-        <div class="panel-header">
-          <h3>Pagos</h3>
-        </div>
-
-        <ul class="list-compact">
-          ${appState.pagos.length ? appState.pagos.map(p => {
-            const matricula = getMatriculaById(p.matriculaId);
-            const alumno = matricula ? getAlumnoById(matricula.alumnoId) : null;
-            return `<li><strong>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Alumno"}</strong><span>${formatMoney(p.monto)}</span></li>`;
-          }).join("") : `<li><span>No hay pagos.</span></li>`}
-        </ul>
+        <div class="panel-header"><h3>Ingresos por método</h3></div>
+        <ul class="list-compact">${reporte.porMetodo.length ? reporte.porMetodo.map(x =>
+          `<li><strong>${esc(etiqueta(x.metodo))}</strong><span>${dinero(x.monto)}</span></li>`).join("")
+          : `<li><span>No hay pagos registrados.</span></li>`}</ul>
       </div>
     </section>
 
     <section class="content-grid">
       <div class="panel">
-        <div class="panel-header">
-          <h3>Clases programadas</h3>
-        </div>
-
-        <ul class="list-compact">
-          ${appState.clases.length ? appState.clases.map(c => {
-            const instructor = getInstructorById(c.instructorId);
-            return `<li><strong>${c.nombre}</strong><span>${c.horaInicio} - ${c.horaFin}</span></li>`;
-          }).join("") : `<li><span>No hay clases.</span></li>`}
-        </ul>
+        <div class="panel-header"><h3>Próximas clases</h3></div>
+        <ul class="list-compact">${clases.length ? clases.slice(0, 6).map(c =>
+          `<li><strong>${esc(c.nombre)}</strong><span>${esc(c.fecha)} ${esc(String(c.horaInicio || "").slice(0, 5))}</span></li>`).join("")
+          : `<li><span>No hay clases.</span></li>`}</ul>
       </div>
-
       <div class="panel">
-        <div class="panel-header">
-          <h3>Vehículos</h3>
+        <div class="panel-header"><h3>Requerimientos funcionales</h3></div>
+        <div class="requirements-grid">
+          <div class="requirement-item"><span>RF-01</span><p>Control de acceso por roles.</p></div>
+          <div class="requirement-item"><span>RF-02</span><p>Registro de alumnos y paquetes.</p></div>
+          <div class="requirement-item"><span>RF-03</span><p>Gestión de matrículas y pagos.</p></div>
+          <div class="requirement-item"><span>RF-04</span><p>Programación de clases y recursos.</p></div>
+          <div class="requirement-item"><span>RF-05</span><p>Asistencia y evaluación.</p></div>
+          <div class="requirement-item"><span>RF-06</span><p>Mantenimiento y ausencias.</p></div>
+          <div class="requirement-item"><span>RF-07</span><p>Reportes e historial.</p></div>
+          <div class="requirement-item"><span>RF-08</span><p>Promociones y paquetes.</p></div>
         </div>
-
-        <ul class="list-compact">
-          ${appState.vehiculos.length ? appState.vehiculos.map(v => `<li><strong>${v.marca} ${v.modelo}</strong><span>${v.estado}</span></li>`).join("") : `<li><span>No hay vehículos.</span></li>`}
-        </ul>
       </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-header">
-        <h3>Requerimientos funcionales del sistema</h3>
-      </div>
-      <div class="requirements-grid">
-        <div class="requirement-item"><span>RF-01</span><p>Control de acceso por roles.</p></div>
-        <div class="requirement-item"><span>RF-02</span><p>Registro de alumnos y paquetes.</p></div>
-        <div class="requirement-item"><span>RF-03</span><p>Gestión de matrículas y pagos.</p></div>
-        <div class="requirement-item"><span>RF-04</span><p>Programación de clases y asignación de recursos.</p></div>
-        <div class="requirement-item"><span>RF-05</span><p>Control de asistencia y evaluación.</p></div>
-        <div class="requirement-item"><span>RF-06</span><p>Gestión de mantenimiento y ausencias.</p></div>
-        <div class="requirement-item"><span>RF-07</span><p>Reportes e historial financiero.</p></div>
-        <div class="requirement-item"><span>RF-08</span><p>Promociones y paquetes comerciales.</p></div>
-      </div>
-    </section>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </section>`;
 }
 
-function renderAlumnos() {
-  const html = `
+/* ---------- Alumnos ---------- */
+async function renderAlumnos() {
+  const alumnos = await api("/alumnos");
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar alumno</h3>
+      <div class="form-card"><h3>Registrar alumno</h3>
         <form id="alumnoForm">
           <div class="form-grid">
             <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
@@ -319,1098 +315,572 @@ function renderAlumnos() {
             <div class="form-group"><label>DNI</label><input name="dni" required /></div>
             <div class="form-group"><label>Email</label><input name="email" type="email" /></div>
             <div class="form-group"><label>Teléfono</label><input name="telefono" /></div>
-            <div class="form-group"><label>Fecha registro</label><input name="fecha_registro" type="date" value="${new Date().toISOString().split("T")[0]}" /></div>
+            <div class="form-group"><label>Fecha registro</label><input name="fechaRegistro" type="date" value="${hoy()}" /></div>
             <div class="form-group" style="grid-column: span 3;"><label>Dirección</label><textarea name="direccion" rows="2"></textarea></div>
           </div>
-          <div class="form-actions"><button type="submit" class="action-btn">Guardar alumno</button></div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar alumno</button>
+            <button type="button" class="mini-btn" data-action="limpiar" data-form="alumnoForm">Limpiar</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Listado de alumnos</h3></div>
-        <table>
-          <thead>
-            <tr><th>Nombre</th><th>DNI</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.alumnos.length ? appState.alumnos.map(a => `
-              <tr>
-                <td>${a.nombre} ${a.apellidos}</td>
-                <td>${a.dni}</td>
-                <td>${a.email}</td>
-                <td>${a.telefono}</td>
-                <td>
-                  <button class="edit-btn" data-action="edit-alumno" data-id="${a.id}">Editar</button>
-                  <button class="delete-btn" data-action="delete-alumno" data-id="${a.id}">Eliminar</button>
-                </td>
-              </tr>
-            `).join("") : `<tr><td colspan="5"><div class="empty-state">No hay alumnos registrados.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de alumnos</h3></div>
+        <table><thead><tr><th>Nombre</th><th>DNI</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+          <tbody>${alumnos.length ? alumnos.map(a => `
+            <tr><td>${esc(a.nombre)} ${esc(a.apellidos)}</td><td>${esc(a.dni)}</td><td>${esc(a.email)}</td>
+            <td>${esc(a.telefono)}</td><td>${botonesEditarEliminar("alumnos", a.id)}</td></tr>`).join("")
+            : tablaVacia(5, "No hay alumnos registrados.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderMatriculas() {
-  const html = `
+/* ---------- Matrículas ---------- */
+async function renderMatriculas() {
+  const [matriculas, alumnos, paquetes] = await Promise.all([api("/matriculas"), api("/alumnos"), api("/paquetes?soloVigentes=true")]);
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar matrícula</h3>
+      <div class="form-card"><h3>Registrar matrícula</h3>
         <form id="matriculaForm">
           <div class="form-grid two">
-            <div class="form-group">
-              <label>Alumno</label>
-              <select name="alumnoId" required>
-                <option value="">Seleccione</option>
-                ${appState.alumnos.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Paquete</label>
-              <select name="paqueteId" required>
-                <option value="">Seleccione</option>
-                ${appState.paquetes.map(p => `<option value="${p.id}">${p.nombre} - ${formatMoney(p.precio)}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
-            <div class="form-group">
-              <label>Estado</label>
-              <select name="estado">
-                <option value="confirmada">Confirmada</option>
-                <option value="por_pagar">Por pagar</option>
-                <option value="cancelada">Cancelada</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Alumno</label><select name="alumnoId" required>${opciones(alumnos, a => `${a.nombre} ${a.apellidos}`)}</select></div>
+            <div class="form-group"><label>Paquete</label><select name="paqueteId" required>${opciones(paquetes, p => `${p.nombre} - ${dinero(p.precio)}`)}</select></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
+            <div class="form-group"><label>Estado</label><select name="estado">
+              <option value="POR_PAGAR">Por pagar</option><option value="CONFIRMADA">Confirmada</option>
+              <option value="CANCELADA">Cancelada</option><option value="VENCIDA">Vencida</option></select></div>
           </div>
-          <div class="form-actions"><button type="submit" class="action-btn">Guardar matrícula</button></div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar matrícula</button>
+            <button type="button" class="mini-btn" data-action="limpiar" data-form="matriculaForm">Limpiar</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Listado de matrículas</h3></div>
-        <table>
-          <thead>
-            <tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.matriculas.length ? appState.matriculas.map(m => {
-              const alumno = getAlumnoById(m.alumnoId);
-              const paquete = getPaqueteById(m.paqueteId);
-              return `
-                <tr>
-                  <td>${alumno ? alumno.nombre + " " + alumno.apellidos : "Sin alumno"}</td>
-                  <td>${paquete ? paquete.nombre : "Sin paquete"}</td>
-                  <td><span class="status ${m.estado}">${m.estado}</span></td>
-                  <td>${m.fecha}</td>
-                  <td><button class="delete-btn" data-action="delete-matricula" data-id="${m.id}">Eliminar</button></td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="5"><div class="empty-state">No hay matrículas.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de matrículas</h3></div>
+        <table><thead><tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody>${matriculas.length ? matriculas.map(m => `
+            <tr><td>${esc(m.alumnoNombre)}</td><td>${esc(m.paquete)}</td><td>${estadoHtml(m.estado)}</td>
+            <td>${esc(m.fecha)}</td><td>${botonesEditarEliminar("matriculas", m.id)}</td></tr>`).join("")
+            : tablaVacia(5, "No hay matrículas.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderPagos() {
-  const html = `
+/* ---------- Pagos ---------- */
+async function renderPagos() {
+  const [pagos, matriculas] = await Promise.all([api("/pagos"), api("/matriculas")]);
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar pago</h3>
+      <div class="form-card"><h3>Registrar pago</h3>
         <form id="pagoForm">
           <div class="form-grid two">
-            <div class="form-group">
-              <label>Matrícula</label>
-              <select name="matriculaId" required>
-                <option value="">Seleccione</option>
-                ${appState.matriculas.map(m => {
-                  const alumno = getAlumnoById(m.alumnoId);
-                  const paquete = getPaqueteById(m.paqueteId);
-                  return `<option value="${m.id}">${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Alumno"} - ${paquete ? paquete.nombre : ""}</option>`;
-                }).join("")}
-              </select>
-            </div>
-            <div class="form-group"><label>Monto</label><input name="monto" type="number" min="1" step="0.01" required /></div>
-            <div class="form-group">
-              <label>Método de pago</label>
-              <select name="metodo" required>
-                <option value="efectivo">Efectivo</option>
-                <option value="yape">Yape</option>
-                <option value="plin">Plin</option>
-                <option value="transferencia">Transferencia</option>
-              </select>
-            </div>
-            <div class="form-group"><label>Número comprobante</label><input name="comprobante" required /></div>
-            <div class="form-group" style="grid-column: span 2;"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
+            <div class="form-group"><label>Matrícula</label><select name="matriculaId" required>
+              ${opciones(matriculas, m => `${m.alumnoNombre} - ${m.paquete}`)}</select></div>
+            <div class="form-group"><label>Monto</label><input name="monto" type="number" min="0.01" step="0.01" required /></div>
+            <div class="form-group"><label>Método de pago</label><select name="metodo">
+              <option value="EFECTIVO">Efectivo</option><option value="YAPE">Yape</option>
+              <option value="PLIN">Plin</option><option value="TRANSFERENCIA">Transferencia</option></select></div>
+            <div class="form-group"><label>Comprobante (opcional)</label><input name="comprobante" placeholder="Se genera automáticamente" /></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
           </div>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar pago</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Listado de pagos</h3></div>
-        <table>
-          <thead>
-            <tr><th>Alumno</th><th>Monto</th><th>Método</th><th>Fecha</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.pagos.length ? appState.pagos.map(p => {
-              const matricula = getMatriculaById(p.matriculaId);
-              const alumno = matricula ? getAlumnoById(matricula.alumnoId) : null;
-              return `
-                <tr>
-                  <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
-                  <td>${formatMoney(p.monto)}</td>
-                  <td>${p.metodo}</td>
-                  <td>${p.fecha}</td>
-                  <td><button class="delete-btn" data-action="delete-pago" data-id="${p.id}">Eliminar</button></td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="5"><div class="empty-state">No hay pagos.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de pagos</h3></div>
+        <table><thead><tr><th>Alumno</th><th>Monto</th><th>Método</th><th>Comprobante</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <tbody>${pagos.length ? pagos.map(p => `
+            <tr><td>${esc(p.alumnoNombre)}</td><td>${dinero(p.monto)}</td><td>${esc(etiqueta(p.metodo))}</td>
+            <td><button class="edit-btn" data-action="comprobante" data-id="${p.id}">${esc(p.comprobante)}</button></td>
+            <td>${esc(p.fecha)}</td><td><button class="delete-btn" data-action="delete" data-entidad="pagos" data-id="${p.id}">Eliminar</button></td></tr>`).join("")
+            : tablaVacia(6, "No hay pagos.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderPaquetes() {
-  const html = `
+async function verComprobante(id) {
+  try {
+    const c = await api(`/pagos/${id}/comprobante`);
+    mostrarModal("Comprobante de pago", `
+      <div class="comprobante">
+        <p><strong>Número:</strong> ${esc(c.numero)}</p>
+        <p><strong>Fecha:</strong> ${esc(c.fecha)}</p>
+        <p><strong>Alumno:</strong> ${esc(c.alumno)}</p>
+        <p><strong>Paquete:</strong> ${esc(c.paquete)}</p>
+        <p><strong>Método:</strong> ${esc(etiqueta(c.metodo))}</p>
+        <p><strong>Monto:</strong> ${dinero(c.monto)}</p>
+      </div>`);
+  } catch (error) { notificar(error.message, "error"); }
+}
+
+/* ---------- Paquetes ---------- */
+async function renderPaquetes() {
+  const paquetes = await api("/paquetes");
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Gestionar paquete</h3>
+      <div class="form-card"><h3>Gestionar paquete</h3>
         <form id="paqueteForm">
           <div class="form-grid two">
             <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
             <div class="form-group"><label>Categoría</label><input name="categoria" required /></div>
-            <div class="form-group"><label>Número de clases</label><input name="numero_clases" type="number" min="1" required /></div>
+            <div class="form-group"><label>Número de clases</label><input name="numeroClases" type="number" min="1" required /></div>
             <div class="form-group"><label>Precio</label><input name="precio" type="number" min="0" step="0.01" required /></div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>Vigente</label>
-              <select name="vigente">
-                <option value="true">Sí</option>
-                <option value="false">No</option>
-              </select>
-            </div>
           </div>
-          <div class="form-actions"><button type="submit" class="action-btn">Guardar paquete</button></div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar paquete</button>
+            <button type="button" class="mini-btn" data-action="limpiar" data-form="paqueteForm">Limpiar</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Listado de paquetes</h3></div>
-        <table>
-          <thead>
-            <tr><th>Nombre</th><th>Categoría</th><th>Clases</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.paquetes.length ? appState.paquetes.map(p => `
-              <tr>
-                <td>${p.nombre}</td>
-                <td>${p.categoria}</td>
-                <td>${p.numero_clases}</td>
-                <td>${formatMoney(p.precio)}</td>
-                <td>${p.vigente ? "Vigente" : "No vigente"}</td>
-                <td><button class="delete-btn" data-action="delete-paquete" data-id="${p.id}">Eliminar</button></td>
-              </tr>
-            `).join("") : `<tr><td colspan="6"><div class="empty-state">No hay paquetes.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de paquetes</h3></div>
+        <table><thead><tr><th>Nombre</th><th>Categoría</th><th>Clases</th><th>Precio</th><th>Vigencia</th><th>Acciones</th></tr></thead>
+          <tbody>${paquetes.length ? paquetes.map(p => `
+            <tr><td>${esc(p.nombre)}</td><td>${esc(p.categoria)}</td><td>${esc(p.numeroClases)}</td>
+            <td>${dinero(p.precio)}</td><td>${p.vigente ? estadoHtml("VIGENTE") : estadoHtml("NO_VIGENTE")}</td>
+            <td>${botonesEditarEliminar("paquetes", p.id)}</td></tr>`).join("")
+            : tablaVacia(6, "No hay paquetes.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderClases() {
-  const html = `
+/* ---------- Clases ---------- */
+async function renderClases() {
+  const [clases, alumnos, instructores, vehiculos] = await Promise.all([
+    api("/clases"), api("/alumnos"), api("/instructores"), api("/vehiculos")
+  ]);
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Programar clase</h3>
+      <div class="form-card"><h3>Programar clase</h3>
         <form id="claseForm">
           <div class="form-grid">
             <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
-            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" required /></div>
-            <div class="form-group"><label>Hora inicio</label><input name="horaInicio" type="time" required /></div>
-            <div class="form-group"><label>Hora fin</label><input name="horaFin" type="time" required /></div>
-            <div class="form-group"><label>Instructor</label>
-              <select name="instructorId" required>
-                <option value="">Seleccione</option>
-                ${appState.instructores.map(i => `<option value="${i.id}">${i.nombre}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group"><label>Vehículo</label>
-              <select name="vehiculoId" required>
-                <option value="">Seleccione</option>
-                ${appState.vehiculos.map(v => `<option value="${v.id}">${v.marca} ${v.modelo} - ${v.placa}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group" style="grid-column: span 3;"><label>Estado</label>
-              <select name="estado">
-                <option value="programada">Programada</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="realizada">Realizada</option>
-                <option value="cancelada">Cancelada</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Alumno</label><select name="alumnoId" required>${opciones(alumnos, a => `${a.nombre} ${a.apellidos}`)}</select></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
+            <div class="form-group"><label>Hora inicio</label><input name="horaInicio" type="time" value="08:00" required /></div>
+            <div class="form-group"><label>Hora fin</label><input name="horaFin" type="time" value="09:30" required /></div>
+            <div class="form-group"><label>Instructor</label><select name="instructorId" required>${opciones(instructores.filter(i => i.disponible), i => i.nombre)}</select></div>
+            <div class="form-group"><label>Vehículo</label><select name="vehiculoId" required>${opciones(vehiculos.filter(v => v.estado === "OPERATIVO"), v => `${v.marca} ${v.modelo} - ${v.placa}`)}</select></div>
+            <div class="form-group"><label>Estado</label><select name="estado">
+              <option value="PROGRAMADA">Programada</option><option value="CONFIRMADA">Confirmada</option>
+              <option value="REALIZADA">Realizada</option><option value="CANCELADA">Cancelada</option></select></div>
           </div>
-          <div class="form-actions"><button type="submit" class="action-btn">Guardar clase</button></div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar clase</button>
+            <button type="button" class="mini-btn" data-action="limpiar" data-form="claseForm">Limpiar</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Listado de clases</h3></div>
-        <table>
-          <thead>
-            <tr><th>Clase</th><th>Fecha</th><th>Horario</th><th>Instructor</th><th>Estado</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.clases.length ? appState.clases.map(c => {
-              const instructor = getInstructorById(c.instructorId);
-              return `
-                <tr>
-                  <td>${c.nombre}</td>
-                  <td>${c.fecha}</td>
-                  <td>${c.horaInicio} - ${c.horaFin}</td>
-                  <td>${instructor ? instructor.nombre : "Sin instructor"}</td>
-                  <td><span class="status ${c.estado}">${c.estado}</span></td>
-                  <td><button class="delete-btn" data-action="delete-clase" data-id="${c.id}">Eliminar</button></td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay clases programadas.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de clases</h3></div>
+        <table><thead><tr><th>Clase</th><th>Alumno</th><th>Fecha</th><th>Horario</th><th>Instructor</th><th>Vehículo</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${clases.length ? clases.map(c => `
+            <tr><td>${esc(c.nombre)}</td><td>${esc(c.alumnoNombre)}</td><td>${esc(c.fecha)}</td>
+            <td>${esc(String(c.horaInicio || "").slice(0, 5))} - ${esc(String(c.horaFin || "").slice(0, 5))}</td><td>${esc(c.instructorNombre)}</td>
+            <td>${esc(c.vehiculoPlaca)}</td><td>${estadoHtml(c.estado)}</td>
+            <td>${botonesEditarEliminar("clases", c.id)}</td></tr>`).join("")
+            : tablaVacia(8, "No hay clases programadas.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderVehiculos() {
-  const html = `
+/* ---------- Vehículos ---------- */
+async function renderVehiculos() {
+  const vehiculos = await api("/vehiculos");
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar vehículo</h3>
+      <div class="form-card"><h3>Registrar vehículo</h3>
         <form id="vehiculoForm">
           <div class="form-grid two">
             <div class="form-group"><label>Placa</label><input name="placa" required /></div>
             <div class="form-group"><label>Marca</label><input name="marca" required /></div>
             <div class="form-group"><label>Modelo</label><input name="modelo" required /></div>
-            <div class="form-group">
-              <label>Estado</label>
-              <select name="estado">
-                <option value="operativo">Operativo</option>
-                <option value="en_taller">En taller</option>
-                <option value="inactivo">Inactivo</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Estado</label><select name="estado">
+              <option value="OPERATIVO">Operativo</option><option value="EN_TALLER">En taller</option>
+              <option value="INACTIVO">Inactivo</option></select></div>
           </div>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar vehículo</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Inventario de vehículos</h3></div>
-        <table>
-          <thead>
-            <tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>Estado</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.vehiculos.length ? appState.vehiculos.map(v => `
-              <tr>
-                <td>${v.placa}</td>
-                <td>${v.marca}</td>
-                <td>${v.modelo}</td>
-                <td>${v.estado}</td>
-                <td><button class="delete-btn" data-action="delete-vehiculo" data-id="${v.id}">Eliminar</button></td>
-              </tr>
-            `).join("") : `<tr><td colspan="5"><div class="empty-state">No hay vehículos.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Inventario de vehículos</h3></div>
+        <table><thead><tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${vehiculos.length ? vehiculos.map(v => `
+            <tr><td>${esc(v.placa)}</td><td>${esc(v.marca)}</td><td>${esc(v.modelo)}</td>
+            <td>${estadoHtml(v.estado)}</td><td>${botonesEditarEliminar("vehiculos", v.id)}</td></tr>`).join("")
+            : tablaVacia(5, "No hay vehículos.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderInstructores() {
-  const html = `
+/* ---------- Instructores ---------- */
+async function renderInstructores() {
+  const instructores = await api("/instructores");
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar instructor</h3>
+      <div class="form-card"><h3>Registrar instructor</h3>
         <form id="instructorForm">
           <div class="form-grid two">
             <div class="form-group"><label>Nombre</label><input name="nombre" required /></div>
             <div class="form-group"><label>Especialidad</label><input name="especialidad" required /></div>
             <div class="form-group"><label>Teléfono</label><input name="telefono" /></div>
-            <div class="form-group">
-              <label>Disponible</label>
-              <select name="disponible">
-                <option value="true">Sí</option>
-                <option value="false">No</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Disponible</label><select name="disponible">
+              <option value="true">Sí</option><option value="false">No</option></select></div>
           </div>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar instructor</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Listado de instructores</h3></div>
-        <table>
-          <thead>
-            <tr><th>Nombre</th><th>Especialidad</th><th>Teléfono</th><th>Disponibilidad</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.instructores.length ? appState.instructores.map(i => `
-              <tr>
-                <td>${i.nombre}</td>
-                <td>${i.especialidad}</td>
-                <td>${i.telefono}</td>
-                <td>${i.disponible ? "Disponible" : "No disponible"}</td>
-                <td><button class="delete-btn" data-action="delete-instructor" data-id="${i.id}">Eliminar</button></td>
-              </tr>
-            `).join("") : `<tr><td colspan="5"><div class="empty-state">No hay instructores.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Listado de instructores</h3></div>
+        <table><thead><tr><th>Nombre</th><th>Especialidad</th><th>Teléfono</th><th>Disponibilidad</th><th>Acciones</th></tr></thead>
+          <tbody>${instructores.length ? instructores.map(i => `
+            <tr><td>${esc(i.nombre)}</td><td>${esc(i.especialidad)}</td><td>${esc(i.telefono)}</td>
+            <td>${i.disponible ? "Disponible" : "No disponible"}</td>
+            <td>${botonesEditarEliminar("instructores", i.id)}</td></tr>`).join("")
+            : tablaVacia(5, "No hay instructores.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderAsistencia() {
-  const html = `
+/* ---------- Asistencia ---------- */
+async function renderAsistencia() {
+  const [asistencias, clases] = await Promise.all([api("/asistencias"), api("/clases")]);
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="data-table-card">
-        <div class="table-header"><h3>Registro de asistencia</h3></div>
-        <table>
-          <thead>
-            <tr><th>Clase</th><th>Fecha</th><th>Instructor</th><th>Asistió</th><th>Calificación</th></tr>
-          </thead>
-          <tbody>
-            ${appState.clases.length ? appState.clases.map(c => {
-              const instructor = getInstructorById(c.instructorId);
-              const asistencia = appState.asistencias.find(a => a.claseId === c.id);
-              return `
-                <tr>
-                  <td>${c.nombre}</td>
-                  <td>${c.fecha}</td>
-                  <td>${instructor ? instructor.nombre : "Sin instructor"}</td>
-                  <td>${asistencia ? (asistencia.asistio ? "Sí" : "No") : "Sin registro"}</td>
-                  <td>${asistencia ? asistencia.calificacion : "--"}</td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="5"><div class="empty-state">No hay clases para asistencia.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="form-card"><h3>Registrar asistencia y evaluación</h3>
+        <form id="asistenciaForm">
+          <div class="form-grid two">
+            <div class="form-group"><label>Clase</label><select name="claseId" required>${opciones(clases, c => `${c.nombre} - ${c.fecha}`)}</select></div>
+            <div class="form-group"><label>Asistió</label><select name="asistio">
+              <option value="true">Sí</option><option value="false">No</option></select></div>
+            <div class="form-group"><label>Calificación (0-20)</label><input name="calificacion" type="number" min="0" max="20" required /></div>
+            <div class="form-group" style="grid-column: span 2;"><label>Observaciones</label><textarea name="observaciones" rows="2"></textarea></div>
+          </div>
+          <div class="form-actions"><button type="submit" class="action-btn">Guardar asistencia</button></div>
+        </form>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+      <div class="data-table-card"><div class="table-header"><h3>Registro de asistencia</h3></div>
+        <table><thead><tr><th>Clase</th><th>Alumno</th><th>Asistió</th><th>Calificación</th><th>Observaciones</th><th>Acciones</th></tr></thead>
+          <tbody>${asistencias.length ? asistencias.map(a => `
+            <tr><td>${esc(a.claseNombre)}</td><td>${esc(a.alumnoNombre)}</td>
+            <td>${a.asistio ? "Sí" : "No"}</td><td>${esc(a.calificacion)}</td>
+            <td>${esc(a.observaciones || "-")}</td>
+            <td>${botonesEditarEliminar("asistencias", a.id)}</td></tr>`).join("")
+            : tablaVacia(6, "No hay asistencias registradas.")}</tbody></table>
+      </div>
+    </div>`;
 }
 
-function renderMantenimiento() {
-  const html = `
+/* ---------- Mantenimiento ---------- */
+async function renderMantenimiento() {
+  const [mantenimientos, vehiculos] = await Promise.all([api("/mantenimientos"), api("/vehiculos")]);
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar mantenimiento</h3>
+      <div class="form-card"><h3>Registrar mantenimiento</h3>
         <form id="mantenimientoForm">
           <div class="form-grid two">
-            <div class="form-group">
-              <label>Vehículo</label>
-              <select name="vehiculoId" required>
-                <option value="">Seleccione</option>
-                ${appState.vehiculos.map(v => `<option value="${v.id}">${v.marca} ${v.modelo} - ${v.placa}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Tipo</label>
-              <select name="tipo">
-                <option value="Preventivo">Preventivo</option>
-                <option value="Correctivo">Correctivo</option>
-                <option value="Inspección">Inspección</option>
-              </select>
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>Descripción</label>
-              <textarea name="descripcion" rows="2" required></textarea>
-            </div>
-            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
-            <div class="form-group">
-              <label>Estado</label>
-              <select name="estado">
-                <option value="en_proceso">En proceso</option>
-                <option value="completado">Completado</option>
-                <option value="pendiente">Pendiente</option>
-              </select>
-            </div>
-            <div class="form-group" style="grid-column: span 2;"><label>Proveedor</label><input name="proveedor" required /></div>
+            <div class="form-group"><label>Vehículo</label><select name="vehiculoId" required>${opciones(vehiculos, v => `${v.marca} ${v.modelo} - ${v.placa}`)}</select></div>
+            <div class="form-group"><label>Tipo</label><select name="tipo">
+              <option value="PREVENTIVO">Preventivo</option><option value="CORRECTIVO">Correctivo</option>
+              <option value="INSPECCION">Inspección</option></select></div>
+            <div class="form-group" style="grid-column: span 2;"><label>Descripción</label><textarea name="descripcion" rows="2" required></textarea></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
+            <div class="form-group"><label>Estado</label><select name="estado">
+              <option value="PENDIENTE">Pendiente</option><option value="EN_PROCESO">En proceso</option>
+              <option value="COMPLETADO">Completado</option></select></div>
+            <div class="form-group"><label>Proveedor</label><input name="proveedor" required /></div>
+            <div class="form-group"><label>Costo</label><input name="costo" type="number" min="0" step="0.01" /></div>
           </div>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar mantenimiento</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Historial de mantenimiento</h3></div>
-        <table>
-          <thead>
-            <tr><th>Vehículo</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th>Proveedor</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.mantenimientos.length ? appState.mantenimientos.map(m => {
-              const vehiculo = getVehiculoById(m.vehiculoId);
-              return `
-                <tr>
-                  <td>${vehiculo ? `${vehiculo.marca} ${vehiculo.modelo}` : "Sin vehículo"}</td>
-                  <td>${m.tipo}</td>
-                  <td>${m.fecha}</td>
-                  <td>${m.estado}</td>
-                  <td>${m.proveedor}</td>
-                  <td><button class="delete-btn" data-action="delete-mantenimiento" data-id="${m.id}">Eliminar</button></td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay mantenimientos.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Historial de mantenimiento</h3></div>
+        <table><thead><tr><th>Vehículo</th><th>Tipo</th><th>Fecha</th><th>Estado</th><th>Proveedor</th><th>Costo</th><th>Acciones</th></tr></thead>
+          <tbody>${mantenimientos.length ? mantenimientos.map(m => `
+            <tr><td>${esc(m.vehiculoPlaca)}</td><td>${esc(etiqueta(m.tipo))}</td><td>${esc(m.fecha)}</td>
+            <td>${estadoHtml(m.estado)}</td><td>${esc(m.proveedor)}</td><td>${dinero(m.costo)}</td>
+            <td>${botonesEditarEliminar("mantenimientos", m.id)}</td></tr>`).join("")
+            : tablaVacia(7, "No hay mantenimientos.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderAusencias() {
-  const html = `
+/* ---------- Ausencias / reprogramaciones ---------- */
+async function renderAusencias() {
+  const [reprogramaciones, alumnos, clases] = await Promise.all([
+    api("/reprogramaciones"), api("/alumnos"), api("/clases")
+  ]);
+  contenedor().innerHTML = `
     <div class="section-shell">
-      <div class="form-card">
-        <h3>Registrar ausencia / reprogramación</h3>
+      <div class="form-card"><h3>Registrar ausencia / reprogramación</h3>
         <form id="ausenciaForm">
           <div class="form-grid two">
-            <div class="form-group">
-              <label>Alumno</label>
-              <select name="alumnoId" required>
-                <option value="">Seleccione</option>
-                ${appState.alumnos.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Clase</label>
-              <select name="claseId" required>
-                <option value="">Seleccione</option>
-                ${appState.clases.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group" style="grid-column: span 2;">
-              <label>Motivo</label>
-              <textarea name="motivo" rows="2" required></textarea>
-            </div>
-            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${new Date().toISOString().split("T")[0]}" required /></div>
-            <div class="form-group">
-              <label>Estado</label>
-              <select name="estado">
-                <option value="pendiente_reprogramacion">Pendiente reprogramación</option>
-                <option value="reprogramada">Reprogramada</option>
-                <option value="justificada">Justificada</option>
-              </select>
-            </div>
+            <div class="form-group"><label>Alumno</label><select name="alumnoId" required>${opciones(alumnos, a => `${a.nombre} ${a.apellidos}`)}</select></div>
+            <div class="form-group"><label>Clase</label><select name="claseId" required>${opciones(clases, c => `${c.nombre} - ${c.fecha}`)}</select></div>
+            <div class="form-group" style="grid-column: span 2;"><label>Motivo</label><textarea name="motivo" rows="2" required></textarea></div>
+            <div class="form-group"><label>Fecha</label><input name="fecha" type="date" value="${hoy()}" required /></div>
+            <div class="form-group"><label>Nueva fecha</label><input name="nuevaFecha" type="date" /></div>
+            <div class="form-group"><label>Nueva hora inicio</label><input name="nuevaHoraInicio" type="time" /></div>
+            <div class="form-group"><label>Nueva hora fin</label><input name="nuevaHoraFin" type="time" /></div>
+            <div class="form-group"><label>Estado</label><select name="estado">
+              <option value="PENDIENTE_REPROGRAMACION">Pendiente reprogramación</option>
+              <option value="REPROGRAMADA">Reprogramada</option>
+              <option value="JUSTIFICADA">Justificada</option>
+              <option value="PENDIENTE">Pendiente</option></select></div>
           </div>
           <div class="form-actions"><button type="submit" class="action-btn">Guardar ausencia</button></div>
         </form>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Control de ausencias y reprogramaciones</h3></div>
-        <table>
-          <thead>
-            <tr><th>Alumno</th><th>Clase</th><th>Fecha</th><th>Motivo</th><th>Estado</th><th>Acciones</th></tr>
-          </thead>
-          <tbody>
-            ${appState.ausencias.length ? appState.ausencias.map(a => {
-              const alumno = getAlumnoById(a.alumnoId);
-              const clase = getClaseById(a.claseId);
-              return `
-                <tr>
-                  <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
-                  <td>${clase ? clase.nombre : "Sin clase"}</td>
-                  <td>${a.fecha}</td>
-                  <td>${a.motivo}</td>
-                  <td>${a.estado}</td>
-                  <td><button class="delete-btn" data-action="delete-ausencia" data-id="${a.id}">Eliminar</button></td>
-                </tr>
-              `;
-            }).join("") : `<tr><td colspan="6"><div class="empty-state">No hay ausencias registradas.</div></td></tr>`}
-          </tbody>
-        </table>
+      <div class="data-table-card"><div class="table-header"><h3>Control de ausencias</h3></div>
+        <table><thead><tr><th>Alumno</th><th>Clase</th><th>Motivo</th><th>Fecha</th><th>Nueva fecha</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>${reprogramaciones.length ? reprogramaciones.map(a => `
+            <tr><td>${esc(a.alumnoNombre)}</td><td>${esc(a.claseNombre)}</td><td>${esc(a.motivo)}</td>
+            <td>${esc(a.fecha)}</td><td>${esc(a.nuevaFecha || "-")}</td><td>${estadoHtml(a.estado)}</td>
+            <td>${botonesEditarEliminar("reprogramaciones", a.id)}</td></tr>`).join("")
+            : tablaVacia(7, "No hay ausencias registradas.")}</tbody></table>
       </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+    </div>`;
 }
 
-function renderReportes() {
-  const totalIngresos = appState.pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
-  const totalMatriculas = appState.matriculas.length;
-  const totalClases = appState.clases.length;
-  const totalAlumnos = appState.alumnos.length;
+/* ---------- Reportes ---------- */
+async function renderReportes() {
+  const params = new URLSearchParams();
+  if (state.filtros.desde) params.set("desde", state.filtros.desde);
+  if (state.filtros.hasta) params.set("hasta", state.filtros.hasta);
+  const r = await api("/reportes/ingresos" + (params.size ? "?" + params : ""));
 
-  const rows = appState.matriculas.map(m => {
-    const alumno = getAlumnoById(m.alumnoId);
-    const paquete = getPaqueteById(m.paqueteId);
-    const pago = appState.pagos.find(p => p.matriculaId === m.id);
-    return `
-      <tr>
-        <td>${alumno ? `${alumno.nombre} ${alumno.apellidos}` : "Sin alumno"}</td>
-        <td>${paquete ? paquete.nombre : "Sin paquete"}</td>
-        <td>${m.estado}</td>
-        <td>${pago ? formatMoney(pago.monto) : "S/ 0.00"}</td>
-      </tr>
-    `;
-  }).join("");
-
-  const html = `
-    <div class="section-shell">
-      <section class="stats-grid">
-        <article class="stat-card blue">
-          <small>Ingresos totales</small>
-          <h3>${formatMoney(totalIngresos)}</h3>
-          <span>Periodo actual</span>
-        </article>
-        <article class="stat-card">
-          <small>Matrículas</small>
-          <h3>${totalMatriculas}</h3>
-          <span>Registradas</span>
-        </article>
-        <article class="stat-card">
-          <small>Clases</small>
-          <h3>${totalClases}</h3>
-          <span>Programadas</span>
-        </article>
-        <article class="stat-card">
-          <small>Alumnos</small>
-          <h3>${totalAlumnos}</h3>
-          <span>Activos</span>
-        </article>
-      </section>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Reporte de ingresos por matrícula</h3></div>
-        <table>
-          <thead>
-            <tr><th>Alumno</th><th>Paquete</th><th>Estado</th><th>Pago</th></tr>
-          </thead>
-          <tbody>
-            ${rows || `<tr><td colspan="4">No hay reportes.</td></tr>`}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
-}
-
-function renderHistorial() {
-  const alumnos = appState.alumnos;
-  const selectOptions = alumnos.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join("");
-  const defaultAlumnoId = alumnos[0] ? alumnos[0].id : "";
-
-  const alumnoSeleccionado = getAlumnoById(defaultAlumnoId);
-  let academicRows = "";
-  let financialRows = "";
-
-  if (alumnoSeleccionado) {
-    const matriculas = appState.matriculas.filter(m => m.alumnoId === alumnoSeleccionado.id);
-    academicRows = matriculas.length ? matriculas.map(m => {
-      const paquete = getPaqueteById(m.paqueteId);
-      const clase = appState.clases.find(c => c.estado === "confirmada");
-      return `<tr><td>${m.fecha}</td><td>${paquete ? paquete.nombre : "-"}</td><td>${m.estado}</td><td>${clase ? clase.nombre : "Sin clase"}</td></tr>`;
-    }).join("") : `<tr><td colspan="4">No hay información académica.</td></tr>`;
-
-    financialRows = matriculas.length ? matriculas.map(m => {
-      const pago = appState.pagos.find(p => p.matriculaId === m.id);
-      return `<tr><td>${m.fecha}</td><td>${m.estado}</td><td>${pago ? formatMoney(pago.monto) : "S/ 0.00"}</td></tr>`;
-    }).join("") : `<tr><td colspan="3">No hay información financiera.</td></tr>`;
-  }
-
-  const html = `
+  contenedor().innerHTML = `
     <div class="section-shell">
       <div class="form-card">
-        <h3>Consultar historial</h3>
         <div class="form-grid two">
-          <div class="form-group" style="grid-column: span 2;">
-            <label>Alumno</label>
-            <select id="historialAlumnoSelect">
-              <option value="">Seleccione</option>
-              ${selectOptions}
-            </select>
-          </div>
+          <div class="form-group"><label>Desde</label><input id="reporteDesde" type="date" value="${esc(state.filtros.desde)}" /></div>
+          <div class="form-group"><label>Hasta</label><input id="reporteHasta" type="date" value="${esc(state.filtros.hasta)}" /></div>
+        </div>
+        <div class="form-actions"><button class="action-btn" data-action="filtrar-reporte">Generar reporte</button></div>
+      </div>
+      <section class="stats-grid">
+        <article class="stat-card blue"><small>Ingresos totales</small><h3>${dinero(r.totalIngresos)}</h3><span>Periodo seleccionado</span></article>
+        <article class="stat-card"><small>Pagos</small><h3>${r.totalPagos}</h3><span>Registrados</span></article>
+        <article class="stat-card"><small>Promedio</small><h3>${dinero(r.promedioPago)}</h3><span>Por pago</span></article>
+      </section>
+      <div class="content-grid">
+        <div class="data-table-card"><div class="table-header"><h3>Ingresos por método</h3></div>
+          <table><thead><tr><th>Método</th><th>Cantidad</th><th>Monto</th></tr></thead>
+            <tbody>${r.porMetodo.length ? r.porMetodo.map(x => `
+              <tr><td>${esc(etiqueta(x.metodo))}</td><td>${x.cantidad}</td><td>${dinero(x.monto)}</td></tr>`).join("")
+              : tablaVacia(3, "Sin ingresos en el periodo.")}</tbody></table></div>
+        <div class="data-table-card"><div class="table-header"><h3>Ingresos por mes</h3></div>
+          <table><thead><tr><th>Mes</th><th>Monto</th></tr></thead>
+            <tbody>${r.porMes.length ? r.porMes.map(x => `
+              <tr><td>${esc(x.mes)}</td><td>${dinero(x.monto)}</td></tr>`).join("")
+              : tablaVacia(2, "Sin ingresos en el periodo.")}</tbody></table></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- Historial ---------- */
+async function renderHistorial() {
+  const alumnos = await api("/alumnos");
+  contenedor().innerHTML = `
+    <div class="section-shell">
+      <div class="form-card"><h3>Consultar historial</h3>
+        <div class="form-grid two">
+          <div class="form-group" style="grid-column: span 2;"><label>Alumno</label>
+            <select id="historialAlumnoSelect">${opciones(alumnos, a => `${a.nombre} ${a.apellidos}`)}</select></div>
         </div>
       </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Historial académico</h3></div>
-        <table>
-          <thead>
-            <tr><th>Fecha</th><th>Paquete</th><th>Estado</th><th>Clase</th></tr>
-          </thead>
-          <tbody>${academicRows}</tbody>
-        </table>
-      </div>
-
-      <div class="data-table-card">
-        <div class="table-header"><h3>Historial financiero</h3></div>
-        <table>
-          <thead>
-            <tr><th>Fecha</th><th>Estado</th><th>Monto</th></tr>
-          </thead>
-          <tbody>${financialRows}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("viewContent").innerHTML = html;
+      <div class="data-table-card"><div class="table-header"><h3>Historial académico</h3></div>
+        <table><thead><tr><th>Fecha</th><th>Paquete</th><th>Estado</th><th>Clase</th><th>Asistencia</th><th>Calificación</th></tr></thead>
+          <tbody id="historialAcademico"><tr><td colspan="6">Seleccione un alumno.</td></tr></tbody></table></div>
+      <div class="data-table-card"><div class="table-header"><h3>Historial financiero</h3></div>
+        <table><thead><tr><th>Fecha</th><th>Estado</th><th>Monto</th><th>Comprobante</th></tr></thead>
+          <tbody id="historialFinanciero"><tr><td colspan="4">Seleccione un alumno.</td></tr></tbody></table></div>
+    </div>`;
 
   const select = document.getElementById("historialAlumnoSelect");
-  if (select) {
-    select.value = defaultAlumnoId || "";
-    select.addEventListener("change", function () {
-      const alumnoId = Number(select.value);
-      const alumno = getAlumnoById(alumnoId);
-      if (!alumno) return;
-
-      const matriculas = appState.matriculas.filter(m => m.alumnoId === alumno.id);
-      const academicRows2 = matriculas.length ? matriculas.map(m => {
-        const paquete = getPaqueteById(m.paqueteId);
-        return `<tr><td>${m.fecha}</td><td>${paquete ? paquete.nombre : "-"}</td><td>${m.estado}</td><td>${appState.clases.find(c => c.estado === "confirmada") ? appState.clases.find(c => c.estado === "confirmada").nombre : "Sin clase"}</td></tr>`;
-      }).join("") : `<tr><td colspan="4">No hay información académica.</td></tr>`;
-
-      const financialRows2 = matriculas.length ? matriculas.map(m => {
-        const pago = appState.pagos.find(p => p.matriculaId === m.id);
-        return `<tr><td>${m.fecha}</td><td>${m.estado}</td><td>${pago ? formatMoney(pago.monto) : "S/ 0.00"}</td></tr>`;
-      }).join("") : `<tr><td colspan="3">No hay información financiera.</td></tr>`;
-
-      const tables = document.querySelectorAll("table tbody");
-      if (tables.length >= 2) {
-        tables[0].innerHTML = academicRows2;
-        tables[1].innerHTML = financialRows2;
-      }
-    });
+  if (alumnos.length) {
+    select.value = alumnos[0].id;
+    await cargarHistorial(alumnos[0].id);
   }
 }
 
-function renderSection() {
-  renderHeader();
-
-  const navButtons = document.querySelectorAll(".nav-item");
-  navButtons.forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.section === state.currentSection);
-  });
-
-  switch (state.currentSection) {
-    case "dashboard":
-      renderDashboard();
-      break;
-    case "alumnos":
-      renderAlumnos();
-      break;
-    case "matriculas":
-      renderMatriculas();
-      break;
-    case "pagos":
-      renderPagos();
-      break;
-    case "paquetes":
-      renderPaquetes();
-      break;
-    case "clases":
-      renderClases();
-      break;
-    case "vehiculos":
-      renderVehiculos();
-      break;
-    case "instructores":
-      renderInstructores();
-      break;
-    case "asistencia":
-      renderAsistencia();
-      break;
-    case "mantenimiento":
-      renderMantenimiento();
-      break;
-    case "ausencias":
-      renderAusencias();
-      break;
-    case "reportes":
-      renderReportes();
-      break;
-    case "historial":
-      renderHistorial();
-      break;
-    default:
-      renderDashboard();
-  }
+async function cargarHistorial(alumnoId) {
+  if (!alumnoId) return;
+  const academicas = document.getElementById("historialAcademico");
+  const financieras = document.getElementById("historialFinanciero");
+  if (!academicas || !financieras) return;
+  academicas.innerHTML = `<tr><td colspan="6">Cargando...</td></tr>`;
+  try {
+    const h = await api(`/historial/alumnos/${alumnoId}`);
+    academicas.innerHTML = h.academico.length ? h.academico.map(x => `
+      <tr><td>${esc(x.fecha)}</td><td>${esc(x.paquete)}</td><td>${estadoHtml(x.estado)}</td>
+      <td>${esc(x.clase)}</td><td>${esc(x.asistencia)}</td><td>${esc(x.calificacion ?? "-")}</td></tr>`).join("")
+      : tablaVacia(6, "No hay información académica.");
+    financieras.innerHTML = h.financiero.length ? h.financiero.map(x => `
+      <tr><td>${esc(x.fecha)}</td><td>${estadoHtml(x.estado)}</td><td>${dinero(x.monto)}</td>
+      <td>${esc(x.comprobante || "-")}</td></tr>`).join("")
+      : tablaVacia(4, "No hay información financiera.");
+  } catch (error) { notificar(error.message, "error"); }
 }
 
-document.getElementById("loginForm").addEventListener("submit", function (e) {
+/* ---------- Construcción de payloads ---------- */
+const PAYLOADS = {
+  alumnoForm: d => ({ nombre: d.nombre, apellidos: d.apellidos, dni: d.dni, email: d.email, telefono: d.telefono, direccion: d.direccion, fechaRegistro: d.fechaRegistro || hoy() }),
+  matriculaForm: d => ({ alumnoId: Number(d.alumnoId), paqueteId: Number(d.paqueteId), estado: d.estado, fecha: d.fecha }),
+  pagoForm: d => ({ matriculaId: Number(d.matriculaId), monto: Number(d.monto), metodo: d.metodo, comprobante: d.comprobante || "", fecha: d.fecha }),
+  paqueteForm: d => ({ nombre: d.nombre, categoria: d.categoria, numeroClases: Number(d.numeroClases), precio: Number(d.precio) }),
+  claseForm: d => ({ nombre: d.nombre, fecha: d.fecha, horaInicio: d.horaInicio, horaFin: d.horaFin, alumnoId: Number(d.alumnoId), instructorId: Number(d.instructorId), vehiculoId: Number(d.vehiculoId), estado: d.estado }),
+  vehiculoForm: d => ({ placa: d.placa, marca: d.marca, modelo: d.modelo, estado: d.estado }),
+  instructorForm: d => ({ nombre: d.nombre, especialidad: d.especialidad, telefono: d.telefono, disponible: d.disponible === "true" }),
+  asistenciaForm: d => ({ claseId: Number(d.claseId), asistio: d.asistio === "true", calificacion: Number(d.calificacion), observaciones: d.observaciones || "" }),
+  mantenimientoForm: d => ({ vehiculoId: Number(d.vehiculoId), tipo: d.tipo, descripcion: d.descripcion, fecha: d.fecha, estado: d.estado, proveedor: d.proveedor, costo: d.costo ? Number(d.costo) : 0 }),
+  ausenciaForm: d => ({
+    alumnoId: Number(d.alumnoId), claseId: Number(d.claseId), motivo: d.motivo,
+    fecha: d.fecha, nuevaFecha: d.nuevaFecha || null, nuevaHoraInicio: d.nuevaHoraInicio || null,
+    nuevaHoraFin: d.nuevaHoraFin || null, estado: d.estado
+  })
+};
+
+const FORM_A_ENTIDAD = {
+  alumnoForm: "alumnos", matriculaForm: "matriculas", pagoForm: "pagos", paqueteForm: "paquetes",
+  claseForm: "clases", vehiculoForm: "vehiculos", instructorForm: "instructores",
+  asistenciaForm: "asistencias", mantenimientoForm: "mantenimientos", ausenciaForm: "reprogramaciones"
+};
+
+/* ---------- Eventos ---------- */
+document.getElementById("loginForm").addEventListener("submit", async function (e) {
   e.preventDefault();
-
   const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+  const password = document.getElementById("password").value;
   const rol = document.getElementById("rol").value;
-
-  const validation = validateLogin(email, password, rol);
   const msg = document.getElementById("loginMessage");
 
-  if (validation) {
-    msg.textContent = validation;
+  if (!email || !password || !rol) {
+    msg.textContent = "Completa todos los campos.";
     msg.className = "login-message error";
     return;
   }
 
-  const user = loginUser(email, password, rol);
-  if (!user) {
-    msg.textContent = "Credenciales incorrectas. Intenta nuevamente.";
+  msg.textContent = "Validando credenciales...";
+  msg.className = "login-message";
+
+  try {
+    const respuesta = await api("/auth/login", {
+      method: "POST",
+      body: { username: email, password, rol: ROLES_LOGIN[rol] || rol }
+    });
+    state.token = respuesta.token;
+    state.currentUser = { username: respuesta.username, nombre: respuesta.nombre, rol: respuesta.rol };
+    localStorage.setItem(TOKEN_KEY, state.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(state.currentUser));
+    msg.textContent = "Acceso correcto. Redirigiendo...";
+    msg.className = "login-message success";
+    setTimeout(mostrarApp, 350);
+  } catch (error) {
+    msg.textContent = error.message;
     msg.className = "login-message error";
+  }
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => cerrarSesion());
+
+document.querySelectorAll(".nav-item").forEach(btn =>
+  btn.addEventListener("click", () => setSection(btn.dataset.section)));
+
+document.addEventListener("submit", async function (e) {
+  const form = e.target;
+  if (!form.id || !PAYLOADS[form.id]) return;
+  e.preventDefault();
+
+  const entidad = FORM_A_ENTIDAD[form.id];
+  const idEditar = form.dataset.editId;
+  const payload = PAYLOADS[form.id](datosFormulario(form));
+  const boton = form.querySelector('button[type="submit"]');
+
+  try {
+    boton.disabled = true;
+    await api(ENTIDADES[entidad].endpoint + (idEditar ? `/${idEditar}` : ""), {
+      method: idEditar ? "PUT" : "POST",
+      body: payload
+    });
+    notificar(idEditar ? "Registro actualizado correctamente" : "Registro creado correctamente");
+    form.reset();
+    delete form.dataset.editId;
+    if (boton) boton.textContent = boton.textContent.replace("Actualizar", "Guardar");
+    await ENTIDADES[entidad].render();
+  } catch (error) {
+    notificar(error.message, "error");
+  } finally {
+    boton.disabled = false;
+  }
+});
+
+document.addEventListener("click", async function (e) {
+  const target = e.target.closest("[data-action]");
+  if (!target) return;
+  const accion = target.dataset.action;
+
+  if (accion === "cerrar-modal") {
+    document.getElementById("modalRoot").innerHTML = "";
     return;
   }
 
-  msg.textContent = "Acceso correcto. Redirigiendo...";
-  msg.className = "login-message success";
-
-  setTimeout(() => {
-    document.getElementById("loginView").classList.add("hidden");
-    document.getElementById("appView").classList.remove("hidden");
-    renderSection();
-  }, 500);
-});
-
-document.getElementById("logoutBtn").addEventListener("click", logoutUser);
-
-document.querySelectorAll(".nav-item").forEach(btn => {
-  btn.addEventListener("click", () => {
-    setSection(btn.dataset.section);
-  });
-});
-
-document.addEventListener("submit", function (e) {
-  if (e.target && e.target.id === "alumnoForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoAlumno = {
-      id: Date.now(),
-      nombre: data.nombre.trim(),
-      apellidos: data.apellidos.trim(),
-      dni: data.dni.trim(),
-      email: data.email.trim(),
-      telefono: data.telefono.trim(),
-      direccion: data.direccion.trim(),
-      fecha_registro: data.fecha_registro || new Date().toISOString().split("T")[0]
-    };
-
-    appState.alumnos.push(nuevoAlumno);
-    saveState();
-    renderAlumnos();
+  if (accion === "limpiar") {
+    const form = document.getElementById(target.dataset.form);
+    if (form) { form.reset(); delete form.dataset.editId; }
+    return;
   }
 
-  if (e.target && e.target.id === "matriculaForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevaMatricula = {
-      id: Date.now(),
-      alumnoId: Number(data.alumnoId),
-      paqueteId: Number(data.paqueteId),
-      fecha: data.fecha,
-      estado: data.estado
-    };
-
-    appState.matriculas.push(nuevaMatricula);
-    saveState();
-    renderMatriculas();
+  if (accion === "comprobante") {
+    await verComprobante(target.dataset.id);
+    return;
   }
 
-  if (e.target && e.target.id === "pagoForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoPago = {
-      id: Date.now(),
-      matriculaId: Number(data.matriculaId),
-      monto: Number(data.monto),
-      metodo: data.metodo,
-      comprobante: data.comprobante.trim(),
-      fecha: data.fecha
-    };
-
-    appState.pagos.push(nuevoPago);
-    saveState();
-    renderPagos();
+  if (accion === "filtrar-reporte") {
+    state.filtros.desde = document.getElementById("reporteDesde").value;
+    state.filtros.hasta = document.getElementById("reporteHasta").value;
+    await renderSection();
+    return;
   }
 
-  if (e.target && e.target.id === "paqueteForm") {
-    e.preventDefault();
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoPaquete = {
-      id: Date.now(),
-      nombre: data.nombre.trim(),
-      categoria: data.categoria.trim(),
-      numero_clases: Number(data.numero_clases),
-      precio: Number(data.precio),
-      vigente: data.vigente === "true"
-    };
-
-    appState.paquetes.push(nuevoPaquete);
-    saveState();
-    renderPaquetes();
+  if (accion === "delete") {
+    const entidad = target.dataset.entidad;
+    if (!ENTIDADES[entidad]) return;
+    if (!window.confirm("¿Está seguro de eliminar este registro?")) return;
+    try {
+      await api(ENTIDADES[entidad].endpoint + "/" + target.dataset.id, { method: "DELETE" });
+      notificar("Registro eliminado correctamente");
+      await ENTIDADES[entidad].render();
+    } catch (error) { notificar(error.message, "error"); }
+    return;
   }
 
-  if (e.target && e.target.id === "claseForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevaClase = {
-      id: Date.now(),
-      nombre: data.nombre.trim(),
-      fecha: data.fecha,
-      horaInicio: data.horaInicio,
-      horaFin: data.horaFin,
-      instructorId: Number(data.instructorId),
-      vehiculoId: Number(data.vehiculoId),
-      estado: data.estado
-    };
-
-    appState.clases.push(nuevaClase);
-    saveState();
-    renderClases();
-  }
-
-  if (e.target && e.target.id === "vehiculoForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoVehiculo = {
-      id: Date.now(),
-      placa: data.placa.trim(),
-      marca: data.marca.trim(),
-      modelo: data.modelo.trim(),
-      estado: data.estado
-    };
-
-    appState.vehiculos.push(nuevoVehiculo);
-    saveState();
-    renderVehiculos();
-  }
-
-  if (e.target && e.target.id === "instructorForm") {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoInstructor = {
-      id: Date.now(),
-      nombre: data.nombre.trim(),
-      especialidad: data.especialidad.trim(),
-      telefono: data.telefono.trim(),
-      disponible: data.disponible === "true"
-    };
-
-    appState.instructores.push(nuevoInstructor);
-    saveState();
-    renderInstructores();
-  }
-
-  if (e.target && e.target.id === "mantenimientoForm") {
-    e.preventDefault();
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevoMantenimiento = {
-      id: Date.now(),
-      vehiculoId: Number(data.vehiculoId),
-      tipo: data.tipo,
-      descripcion: data.descripcion.trim(),
-      fecha: data.fecha,
-      estado: data.estado,
-      proveedor: data.proveedor.trim()
-    };
-
-    appState.mantenimientos.push(nuevoMantenimiento);
-    saveState();
-    renderMantenimiento();
-  }
-
-  if (e.target && e.target.id === "ausenciaForm") {
-    e.preventDefault();
-    const form = e.target;
-    const data = Object.fromEntries(new FormData(form).entries());
-
-    const nuevaAusencia = {
-      id: Date.now(),
-      alumnoId: Number(data.alumnoId),
-      claseId: Number(data.claseId),
-      motivo: data.motivo.trim(),
-      fecha: data.fecha,
-      estado: data.estado
-    };
-
-    appState.ausencias.push(nuevaAusencia);
-    saveState();
-    renderAusencias();
+  if (accion === "edit") {
+    const entidad = ENTIDADES[target.dataset.entidad];
+    if (!entidad) return;
+    try {
+      const item = await api(entidad.endpoint + "/" + target.dataset.id);
+      const form = document.getElementById(entidad.form);
+      if (!form) return;
+      Object.entries(item).forEach(([clave, valor]) => {
+        const campo = form.elements[clave];
+        if (!campo || campo.type === "submit") return;
+        if (campo.type === "date" && valor) campo.value = String(valor).slice(0, 10);
+        else if (campo.type === "time" && valor) campo.value = String(valor).slice(0, 5);
+        else if (campo.type === "checkbox") campo.checked = Boolean(valor);
+        else campo.value = valor ?? "";
+      });
+      form.dataset.editId = target.dataset.id;
+      const boton = form.querySelector('button[type="submit"]');
+      if (boton) boton.textContent = "Actualizar registro";
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+      notificar("Registro cargado en el formulario. Modifique y guarde.");
+    } catch (error) { notificar(error.message, "error"); }
   }
 });
 
-document.addEventListener("click", function (e) {
-  const target = e.target;
-
-  if (target.dataset.action === "delete-alumno") {
-    const id = Number(target.dataset.id);
-    appState.alumnos = appState.alumnos.filter(a => a.id !== id);
-    appState.matriculas = appState.matriculas.filter(m => m.alumnoId !== id);
-    saveState();
-    renderAlumnos();
-  }
-
-  if (target.dataset.action === "delete-matricula") {
-    const id = Number(target.dataset.id);
-    appState.matriculas = appState.matriculas.filter(m => m.id !== id);
-    appState.pagos = appState.pagos.filter(p => p.matriculaId !== id);
-    saveState();
-    renderMatriculas();
-  }
-
-  if (target.dataset.action === "delete-pago") {
-    const id = Number(target.dataset.id);
-    appState.pagos = appState.pagos.filter(p => p.id !== id);
-    saveState();
-    renderPagos();
-  }
-
-  if (target.dataset.action === "delete-paquete") {
-    const id = Number(target.dataset.id);
-    appState.paquetes = appState.paquetes.filter(p => p.id !== id);
-    saveState();
-    renderPaquetes();
-  }
-
-  if (target.dataset.action === "delete-clase") {
-    const id = Number(target.dataset.id);
-    appState.clases = appState.clases.filter(c => c.id !== id);
-    appState.asistencias = appState.asistencias.filter(a => a.claseId !== id);
-    saveState();
-    renderClases();
-  }
-
-  if (target.dataset.action === "delete-vehiculo") {
-    const id = Number(target.dataset.id);
-    appState.vehiculos = appState.vehiculos.filter(v => v.id !== id);
-    saveState();
-    renderVehiculos();
-  }
-
-  if (target.dataset.action === "delete-instructor") {
-    const id = Number(target.dataset.id);
-    appState.instructores = appState.instructores.filter(i => i.id !== id);
-    saveState();
-    renderInstructores();
-  }
-
-  if (target.dataset.action === "delete-mantenimiento") {
-    const id = Number(target.dataset.id);
-    appState.mantenimientos = appState.mantenimientos.filter(m => m.id !== id);
-    saveState();
-    renderMantenimiento();
-  }
-
-  if (target.dataset.action === "delete-ausencia") {
-    const id = Number(target.dataset.id);
-    appState.ausencias = appState.ausencias.filter(a => a.id !== id);
-    saveState();
-    renderAusencias();
-  }
-
-  if (target.dataset.action === "edit-alumno") {
-    const id = Number(target.dataset.id);
-    const alumno = getAlumnoById(id);
-    if (!alumno) return;
-
-    const form = document.getElementById("alumnoForm");
-    if (!form) return;
-
-    form.nombre.value = alumno.nombre;
-    form.apellidos.value = alumno.apellidos;
-    form.dni.value = alumno.dni;
-    form.email.value = alumno.email;
-    form.telefono.value = alumno.telefono;
-    form.direccion.value = alumno.direccion;
-    form.fecha_registro.value = alumno.fecha_registro || new Date().toISOString().split("T")[0];
-
-    const btn = form.querySelector("button[type='submit']");
-    btn.textContent = "Actualizar alumno";
-    btn.dataset.editId = id;
-
-    form.addEventListener("submit", function handler(e) {
-      if (e.target !== form) return;
-      e.preventDefault();
-
-      const updated = {
-        id,
-        nombre: form.nombre.value.trim(),
-        apellidos: form.apellidos.value.trim(),
-        dni: form.dni.value.trim(),
-        email: form.email.value.trim(),
-        telefono: form.telefono.value.trim(),
-        direccion: form.direccion.value.trim(),
-        fecha_registro: form.fecha_registro.value
-      };
-
-      const index = appState.alumnos.findIndex(a => a.id === id);
-      if (index >= 0) appState.alumnos[index] = updated;
-
-      saveState();
-      renderAlumnos();
-      form.removeEventListener("submit", handler);
-    }, { once: true });
+document.addEventListener("change", function (e) {
+  if (e.target && e.target.id === "historialAlumnoSelect") {
+    cargarHistorial(e.target.value);
   }
 });
 
-window.addEventListener("DOMContentLoaded", function () {
-  const appView = document.getElementById("appView");
-  const loginView = document.getElementById("loginView");
-
-  if (!state.currentUser) {
-    loginView.classList.remove("hidden");
-    appView.classList.add("hidden");
+window.addEventListener("DOMContentLoaded", async function () {
+  if (!state.token) {
+    cerrarSesion(true);
+    return;
   }
-
-  renderSection();
+  try {
+    state.currentUser = await api("/auth/me");
+    localStorage.setItem(USER_KEY, JSON.stringify(state.currentUser));
+    mostrarApp();
+  } catch (error) {
+    cerrarSesion(true);
+  }
 });

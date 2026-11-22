@@ -1,43 +1,65 @@
 package com.sindaco.seguridad.service;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.sindaco.comun.exception.ConflictoException;
+import com.sindaco.comun.exception.RecursoNoEncontradoException;
+import com.sindaco.comun.exception.ReglaNegocioException;
+import com.sindaco.config.JwtService;
 import com.sindaco.seguridad.dto.LoginRequest;
 import com.sindaco.seguridad.dto.LoginResponse;
+import com.sindaco.seguridad.dto.UsuarioResponse;
 import com.sindaco.seguridad.entity.Rol;
 import com.sindaco.seguridad.entity.Usuario;
 import com.sindaco.seguridad.repository.UsuarioRepository;
-import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
+/** Capa de aplicación: autenticación y consulta del usuario actual. */
 @Service
 public class AuthService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
-    public AuthService(UsuarioRepository usuarioRepository) {
+    public AuthService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
+    @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(request.getUsername());
+        Usuario usuario = usuarioRepository.findByUsername(request.username())
+                .orElseThrow(() -> new ReglaNegocioException("Credenciales inválidas"));
 
-        if (usuarioOpt.isEmpty()) {
-            throw new RuntimeException("Usuario no encontrado");
+        if (!usuario.isActivo() || !passwordEncoder.matches(request.password(), usuario.getPassword())) {
+            throw new ReglaNegocioException("Credenciales inválidas");
         }
 
-        Usuario usuario = usuarioOpt.get();
-        if (!usuario.getPassword().equals(request.getPassword())) {
-            throw new RuntimeException("Credenciales inválidas");
+        if (request.rol() != null && !request.rol().isBlank()
+                && !usuario.getRol().name().equalsIgnoreCase(request.rol())) {
+            throw new ReglaNegocioException("El rol seleccionado no corresponde al usuario");
         }
 
-        return new LoginResponse(usuario.getUsername(), usuario.getRol().name(), "token-demo");
+        return new LoginResponse(jwtService.generarToken(usuario), usuario.getUsername(),
+                usuario.getNombre(), usuario.getRol().name());
     }
 
-    public void crearUsuario(String username, String password, Rol rol) {
-        if (usuarioRepository.findByUsername(username).isPresent()) {
-            return;
-        }
+    @Transactional(readOnly = true)
+    public UsuarioResponse me(String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", null));
+        return new UsuarioResponse(usuario.getId(), usuario.getUsername(), usuario.getNombre(), usuario.getRol().name());
+    }
 
-        usuarioRepository.save(new Usuario(username, password, rol));
+    @Transactional
+    public Usuario crearUsuario(String username, String password, String nombre, Rol rol) {
+        if (usuarioRepository.findByUsername(username).isPresent()) {
+            throw new ConflictoException("Ya existe un usuario con ese nombre: " + username);
+        }
+        Usuario usuario = new Usuario(username, passwordEncoder.encode(password), nombre, rol);
+        return usuarioRepository.save(usuario);
     }
 }

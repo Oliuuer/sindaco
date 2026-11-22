@@ -2,41 +2,22 @@ package com.sindaco.matricula.dto;
 
 import com.sindaco.matricula.enums.EstadoMatricula;
 
-public class MatriculaRequest {
-    private Long alumnoId;
-    private String paquete;
-    private EstadoMatricula estado;
-    private String fecha;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 
-    public Long getAlumnoId() {
-        return alumnoId;
-    }
+/** Datos de entrada para registrar o actualizar una matrícula (CU01). */
+public record MatriculaRequest(
+        @NotNull(message = "El alumno es obligatorio")
+        @Positive(message = "El id del alumno debe ser positivo")
+        Long alumnoId,
 
-    public void setAlumnoId(Long alumnoId) {
-        this.alumnoId = alumnoId;
-    }
+        @NotNull(message = "El paquete es obligatorio")
+        @Positive(message = "El id del paquete debe ser positivo")
+        Long paqueteId,
 
-    public String getPaquete() {
-        return paquete;
-    }
+        EstadoMatricula estado,
 
-    public void setPaquete(String paquete) {
-        this.paquete = paquete;
-    }
-
-    public EstadoMatricula getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoMatricula estado) {
-        this.estado = estado;
-    }
-
-    public String getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(String fecha) {
-        this.fecha = fecha;
-    }
+        @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "La fecha debe tener el formato yyyy-MM-dd")
+        String fecha) {
 }

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin:0; background:#ffffff; font-family:"Segoe UI",Arial,sans-serif; }
+  svg text { font-family:"Segoe UI",Arial,sans-serif; }
+  .titulo { font-size:17px; font-weight:600; fill:#1f2937; }
+  .cls { fill:#f8fafc; stroke:#1e3a5f; stroke-width:2; }
+  .cab { fill:#dbeafe; stroke:#1e3a5f; stroke-width:2; }
+  .stereo { font-size:12px; fill:#475569; }
+  .nombre { font-size:15px; font-weight:700; fill:#0f172a; }
+  .attr { font-size:13px; fill:#334155; }
+  .rel { stroke:#475569; stroke-width:1.8; fill:none; }
+  .dep { stroke:#64748b; stroke-width:1.6; fill:none; stroke-dasharray:6 4; }
+  .etq { font-size:12px; fill:#1d4ed8; }
+</style>
+</head>
+<body>
+<svg width="960" height="520" viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <text x="30" y="30" class="titulo">Figura 70. Diagrama UML del patrón MVC (SINDACO)</text>
+
+  <!-- VISTA -->
+  <g>
+    <rect x="40" y="110" width="230" height="170" rx="3" class="cls"/>
+    <rect x="40" y="110" width="230" height="34" rx="3" class="cab"/>
+    <text x="155" y="133" text-anchor="middle" class="nombre">VistaAlumnos</text>
+    <line x1="40" y1="144" x2="270" y2="144" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="55" y="168" class="attr">+ renderizar(alumnos) : String</text>
+    <text x="55" y="192" class="attr">+ mostrarError(msg) : String</text>
+    <text x="55" y="228" class="stereo">«Vista»</text>
+  </g>
+
+  <!-- CONTROLADOR -->
+  <g>
+    <rect x="365" y="100" width="260" height="190" rx="3" class="cls"/>
+    <rect x="365" y="100" width="260" height="34" rx="3" class="cab"/>
+    <text x="495" y="123" text-anchor="middle" class="nombre">ControladorAlumnos</text>
+    <line x1="365" y1="134" x2="625" y2="134" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="380" y="158" class="attr">- dao : AlumnoDao</text>
+    <text x="380" y="180" class="attr">- vista : VistaAlumnos</text>
+    <line x1="365" y1="194" x2="625" y2="194" stroke="#1e3a5f" stroke-width="1.2"/>
+    <text x="380" y="216" class="attr">+ listar() : String</text>
+    <text x="380" y="240" class="attr">+ buscar(id) : String</text>
+    <text x="380" y="270" class="stereo">«Controlador»</text>
+  </g>
+
+  <!-- MODELO -->
+  <g>
+    <rect x="700" y="110" width="220" height="170" rx="3" class="cls"/>
+    <rect x="700" y="110" width="220" height="34" rx="3" class="cab"/>
+    <text x="810" y="133" text-anchor="middle" class="nombre">ModeloAlumno</text>
+    <line x1="700" y1="144" x2="920" y2="144" stroke="#1e3a5f" stroke-width="1.5"/>
+    <text x="715" y="168" class="attr">- datos : AlumnoDto</text>
+    <line x1="700" y1="180" x2="920" y2="180" stroke="#1e3a5f" stroke-width="1.2"/>
+    <text x="715" y="202" class="attr">+ nombreCompleto() : String</text>
+    <text x="715" y="224" class="attr">+ dniValido() : boolean</text>
+    <text x="715" y="260" class="stereo">«Modelo»</text>
+  </g>
+
+  <!-- Relaciones -->
+  <path d="M 270 160 L 365 160" class="rel" marker-end="url(#arrow)"/>
+  <text x="277" y="150" class="etq">petición del usuario</text>
+
+  <path d="M 625 175 L 700 175" class="rel" marker-end="url(#arrow)"/>
+  <text x="630" y="165" class="etq">obtiene / actualiza</text>
+
+  <path d="M 810 280 C 810 350 155 350 155 280" class="dep" marker-end="url(#arrowD)"/>
+  <text x="430" y="340" class="etq">estado del alumno → se renderiza</text>
+</svg>
+</body>
+</html>
