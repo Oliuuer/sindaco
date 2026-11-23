@@ -124,6 +124,15 @@ O directamente:
 mvn test
 ```
 
+### Desde NetBeans (IDE)
+
+1. Abre NetBeans y elige **File → Open Project…**, selecciona la carpeta `sindaco-main` y pulsa **Open Project**.
+2. En la ventana **Projects** (`Ctrl+1`), selecciona el nodo **sindaco**.
+3. Pulsa **Alt+F6** o elige **Run → Test Project (sindaco)**.
+4. Al terminar aparece el aviso *Tests completed successfully for project: sindaco*. Abre la ventana **Test Results** para ver el detalle por caso.
+
+> NetBeans ejecuta el mismo `mvn test` de Apache Maven, así que los resultados son idénticos a los de PowerShell.
+
 Al terminar debe aparecer:
 
 ```text
