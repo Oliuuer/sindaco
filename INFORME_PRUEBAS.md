@@ -142,7 +142,19 @@ Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-El detalle de cada caso queda en `target\surefire-reports\*.txt`. Para ver el **100% en pantalla**, abre `EVIDENCIA_PRUEBAS.html` en el navegador: el porcentaje se calcula desde esos reportes reales. Para generar el paquete completo (compila y vuelve a ejecutar las pruebas):
+### Cómo obtener el 100%
+
+El porcentaje es `(24 - 0 fallos - 0 errores - 0 omitidas) / 24 × 100 = 100%`.
+
+Después de ejecutar las pruebas (`mvn test` o **Alt+F6** en NetBeans), genera la evidencia con:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\generar_evidencia.ps1
+```
+
+El script lee `target\surefire-reports\TEST-*.xml` y actualiza `EVIDENCIA_PRUEBAS.html` con el porcentaje real. Ábrelo en el navegador para la captura; también puedes capturar la ventana **Test Results** de NetBeans (24 pruebas, 0 fallos).
+
+El detalle de cada caso queda en `target\surefire-reports\*.txt`. Para generar el paquete completo (compila y vuelve a ejecutar las pruebas):
 
 ```powershell
 mvn clean package
