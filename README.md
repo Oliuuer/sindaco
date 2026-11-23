@@ -17,7 +17,7 @@ Sistema integral para gestionar **matrículas, pagos, comprobantes, promociones,
 | Construcción | Maven 3.9+ |
 | Pruebas | JUnit 5, Mockito y AssertJ |
 | Frontend | HTML5 + CSS3 + JavaScript (vanilla, `fetch`) |
-| Documentación | [Arquitectura](docs/ARQUITECTURA.md) · [Contrato API](docs/CONTRATO_API.md) |
+| Documentación | [Arquitectura](docs/ARQUITECTURA.md) · [Contrato API](docs/CONTRATO_API.md) · [Informe de pruebas](INFORME_PRUEBAS.md) |
 
 ## 2. Requisitos previos
 
