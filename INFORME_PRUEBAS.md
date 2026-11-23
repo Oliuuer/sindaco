@@ -2,7 +2,9 @@
 
 Este documento sigue la estructura del ejemplo **“Muestra pruebas de sistemas.pdf”** (Capítulo 4: Resultados), adaptado al proyecto SINDACO.
 
-**Resumen de la ejecución:** 14 pruebas ejecutadas, 0 fallos, 0 errores, 0 omitidas (`BUILD SUCCESS`).
+**Resumen de la ejecución:** 24 pruebas ejecutadas, 0 fallos, 0 errores, 0 omitidas (`BUILD SUCCESS`) → **100% aprobadas**.
+
+> El informe completo con las **5 tablas** que exige la plantilla (`P`, `PV`, `PI`, `C`, `PI`) quedó en `Informe de Testing_S13_2 CI_UMXPSJ_COMPLETADO.docx` (carpeta Downloads).
 
 > **Sobre NetBeans:** el ejemplo usa NetBeans porque es un IDE que ejecuta Maven por debajo. SINDACO es un proyecto **Apache Maven** con **JUnit 5**, así que las mismas pruebas se ejecutan desde PowerShell con `mvn test` o abriendo el `pom.xml` en NetBeans y eligiendo *Test Project*. No es necesario instalar NetBeans.
 
@@ -136,11 +138,11 @@ mvn test
 Al terminar debe aparecer:
 
 ```text
-Tests run: 14, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 24, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-El detalle de cada caso queda en `target\surefire-reports\*.txt`. Para generar el paquete completo (compila y vuelve a ejecutar las pruebas):
+El detalle de cada caso queda en `target\surefire-reports\*.txt`. Para ver el **100% en pantalla**, abre `EVIDENCIA_PRUEBAS.html` en el navegador: el porcentaje se calcula desde esos reportes reales. Para generar el paquete completo (compila y vuelve a ejecutar las pruebas):
 
 ```powershell
 mvn clean package

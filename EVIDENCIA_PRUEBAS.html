@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Evidencia de pruebas SINDACO</title>
+<style>
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 32px; color: #1f2937; }
+  h1 { color: #0f172a; }
+  .porcentaje { font-size: 96px; font-weight: 700; color: #16a34a; line-height: 1; }
+  .tarjeta { border: 2px solid #16a34a; border-radius: 16px; padding: 24px 32px; display: inline-block; background: #f0fdf4; }
+  .detalle { font-size: 22px; }
+  table { border-collapse: collapse; margin-top: 28px; width: 100%; }
+  th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }
+  th { background: #0f172a; color: white; }
+  .ok { color: #16a34a; font-weight: 700; }
+  small { color: #64748b; }
+</style>
+</head>
+<body>
+  <h1>SINDACO — Resultado de pruebas automáticas</h1>
+  <div class="tarjeta">
+    <div class="porcentaje">100%</div>
+    <div class="detalle">Pruebas aprobadas: <strong>24</strong> de <strong>24</strong></div>
+    <div class="detalle">Fallos: 0 &nbsp;·&nbsp; Errores: 0 &nbsp;·&nbsp; Omitidas: 0</div>
+  </div>
+  <h2>Detalle por clase de prueba</h2>
+  <table>
+    <tr><th>Clase</th><th>Pruebas</th><th>Fallos</th><th>Errores</th><th>Omitidas</th><th>Estado</th></tr>
+    <tr><td>com.sindaco.agenda.service.ClaseServiceImplTest</td><td>5</td><td>0</td><td>0</td><td>0</td><td class="ok">OK</td></tr>
+<tr><td>com.sindaco.agenda.service.IntegracionClaseInstructorVehiculoTest</td><td>4</td><td>0</td><td>0</td><td>0</td><td class="ok">OK</td></tr>
+<tr><td>com.sindaco.matricula.promocion.service.PromocionServiceImplTest</td><td>5</td><td>0</td><td>0</td><td>0</td><td class="ok">OK</td></tr>
+<tr><td>com.sindaco.matricula.service.IntegracionAlumnoMatriculaPagoTest</td><td>5</td><td>0</td><td>0</td><td>0</td><td class="ok">OK</td></tr>
+<tr><td>com.sindaco.matricula.service.PagoServiceImplTest</td><td>5</td><td>0</td><td>0</td><td>0</td><td class="ok">OK</td></tr>
+  </table>
+  <p><small>Generado a partir de <code>target/surefire-reports/TEST-*.xml</code> — Apache Maven + JUnit 5.</small></p>
+</body>
+</html>

@@ -126,6 +126,17 @@ class PagoServiceImplTest {
     }
 
     @Test
+    void rechazaPagoConMontoCero() {
+        when(matriculaRepository.findById(100L)).thenReturn(Optional.of(matricula(EstadoMatricula.POR_PAGAR)));
+
+        assertThatThrownBy(() -> service.crear(pago("0.00")))
+                .isInstanceOf(ReglaNegocioException.class)
+                .hasMessageContaining("mayor a 0");
+
+        verify(repository, never()).save(any(Pago.class));
+    }
+
+    @Test
     void eliminarPagoRecalculaElEstadoDeLaMatricula() {
         Matricula matricula = matricula(EstadoMatricula.CONFIRMADA);
         Pago pago = new Pago(100L, new BigDecimal("450.00"), "YAPE", "B-000001", LocalDate.now());
